@@ -1,0 +1,40 @@
+# API Keys and Secrets (CRITICAL - never commit these!)
+.env
+.env.local
+*.key
+secrets.txt
+backend/.env
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Python
+__pycache__/
+*.pyc
+backend/venv/
+backend/env/
+venv/
+env/
+*.py[cod]
+
+# Build outputs
+dist/
+build/
+*.bundle.js
+
+# Personal notes
+notes.txt
+TODO.md

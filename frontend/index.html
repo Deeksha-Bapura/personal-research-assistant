@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Research Assistant</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [apiKey, setApiKey] = useState('');
+            const [messages, setMessages] = useState([]);
+            const [input, setInput] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [showApiKeyInput, setShowApiKeyInput] = useState(false); // Changed to false - no longer needed in frontend
+            const messagesEndRef = useRef(null);
+
+            // Load API key from localStorage (kept for backward compatibility but not used)
+            useEffect(() => {
+                // API key now stored in backend .env file
+                setShowApiKeyInput(false);
+            }, []);
+
+            // Auto-scroll to bottom
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages]);
+
+            const saveApiKey = () => {
+                if (apiKey.trim()) {
+                    localStorage.setItem('anthropic_api_key', apiKey.trim());
+                    setShowApiKeyInput(false);
+                }
+            };
+
+            const clearApiKey = () => {
+                localStorage.removeItem('anthropic_api_key');
+                setApiKey('');
+                setShowApiKeyInput(true);
+                setMessages([]);
+            };
+
+            const sendMessage = async () => {
+                if (!input.trim() || isLoading) return;
+
+                const userMessage = { role: 'user', content: input };
+                setMessages(prev => [...prev, userMessage]);
+                setInput('');
+                setIsLoading(true);
+
+                // Add empty assistant message that we'll stream into
+                const assistantMessageIndex = messages.length + 1;
+                setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+                try {
+                    // Call our backend instead of Anthropic directly
+                    const response = await fetch('http://localhost:5000/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            messages: messages.concat([userMessage]).map(msg => ({
+                                role: msg.role,
+                                content: msg.content
+                            }))
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`API Error (${response.status}): ${errorData.error?.message || response.statusText}`);
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let accumulatedContent = '';
+                    let buffer = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6).trim();
+                                if (!data || data === '[DONE]') continue;
+
+                                try {
+                                    const parsed = JSON.parse(data);
+                                    
+                                    if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                                        accumulatedContent += parsed.delta.text;
+                                        
+                                        setMessages(prev => {
+                                            const newMessages = [...prev];
+                                            newMessages[assistantMessageIndex] = {
+                                                role: 'assistant',
+                                                content: accumulatedContent
+                                            };
+                                            return newMessages;
+                                        });
+                                    }
+                                } catch (e) {
+                                    console.warn('Failed to parse SSE data:', data, e);
+                                }
+                            }
+                        }
+                    }
+
+                    if (!accumulatedContent) {
+                        throw new Error('No response received from the API');
+                    }
+                } catch (error) {
+                    console.error('Full error:', error);
+                    setMessages(prev => {
+                        const newMessages = [...prev];
+                        newMessages[assistantMessageIndex] = {
+                            role: 'assistant',
+                            content: `❌ Error: ${error.message}\n\nPlease check:\n- Your API key is correct\n- You have credits remaining\n- Your internet connection is stable`
+                        };
+                        return newMessages;
+                    });
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            };
+
+            const clearChat = () => {
+                setMessages([]);
+            };
+
+            if (showApiKeyInput) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Personal Research Assistant</h1>
+                            <p className="text-gray-600 mb-6">Enter your Anthropic API key to get started</p>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        API Key
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                        placeholder="sk-ant-..."
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        onKeyPress={(e) => e.key === 'Enter' && saveApiKey()}
+                                    />
+                                </div>
+                                
+                                <button
+                                    onClick={saveApiKey}
+                                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                >
+                                    Start Chatting
+                                </button>
+
+                                <div className="text-xs text-gray-500 mt-4">
+                                    <p>Your API key is stored locally in your browser.</p>
+                                    <p className="mt-1">Get your key at: <a href="https://console.anthropic.com/" target="_blank" className="text-blue-600 hover:underline">console.anthropic.com</a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex flex-col h-screen bg-gray-50">
+                    {/* Header */}
+                    <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-800">Research Assistant</h1>
+                            <p className="text-sm text-gray-500">Powered by Claude</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={clearChat}
+                                className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            >
+                                Clear Chat
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto px-6 py-6">
+                        {messages.length === 0 ? (
+                            <div className="flex items-center justify-center h-full">
+                                <div className="text-center">
+                                    <div className="text-6xl mb-4">🔍</div>
+                                    <h2 className="text-2xl font-semibold text-gray-700 mb-2">Start Your Research</h2>
+                                    <p className="text-gray-500">Ask me anything! I'm here to help with your research.</p>
+                                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                                        <button
+                                            onClick={() => setInput("Explain quantum computing in simple terms")}
+                                            className="p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
+                                        >
+                                            <p className="text-sm font-medium text-gray-700">Explain a concept</p>
+                                            <p className="text-xs text-gray-500">Quantum computing basics</p>
+                                        </button>
+                                        <button
+                                            onClick={() => setInput("Summarize the key points about machine learning")}
+                                            className="p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
+                                        >
+                                            <p className="text-sm font-medium text-gray-700">Summarize a topic</p>
+                                            <p className="text-xs text-gray-500">Machine learning overview</p>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="max-w-3xl mx-auto space-y-6">
+                                {messages.map((message, index) => (
+                                    <div
+                                        key={index}
+                                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                    >
+                                        <div
+                                            className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                                                message.role === 'user'
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-white border border-gray-200 text-gray-800'
+                                            }`}
+                                        >
+                                            <div className="whitespace-pre-wrap break-words">
+                                                {message.content}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div ref={messagesEndRef} />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Input */}
+                    <div className="border-t border-gray-200 bg-white px-6 py-4">
+                        <div className="max-w-3xl mx-auto">
+                            <div className="flex gap-3">
+                                <textarea
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyPress={handleKeyPress}
+                                    placeholder="Ask me anything about your research..."
+                                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                    rows="2"
+                                    disabled={isLoading}
+                                />
+                                <button
+                                    onClick={sendMessage}
+                                    disabled={isLoading || !input.trim()}
+                                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                >
+                                    {isLoading ? '...' : 'Send'}
+                                </button>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">Press Enter to send, Shift+Enter for new line</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
