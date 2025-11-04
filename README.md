@@ -120,7 +120,3 @@ This is a learning project. Feel free to:
 ## 📄 License
 
 This project is for educational purposes. Use at your own discretion.
-
----
-
-**Built with ❤️ using Claude & React**
