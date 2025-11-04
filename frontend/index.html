@@ -17,36 +17,87 @@
         const { useState, useEffect, useRef } = React;
 
         function App() {
-            const [apiKey, setApiKey] = useState('');
             const [messages, setMessages] = useState([]);
             const [input, setInput] = useState('');
             const [isLoading, setIsLoading] = useState(false);
-            const [showApiKeyInput, setShowApiKeyInput] = useState(false); // Changed to false - no longer needed in frontend
+            const [documents, setDocuments] = useState([]);
+            const [isUploading, setIsUploading] = useState(false);
+            const [showDocuments, setShowDocuments] = useState(false);
             const messagesEndRef = useRef(null);
-
-            // Load API key from localStorage (kept for backward compatibility but not used)
-            useEffect(() => {
-                // API key now stored in backend .env file
-                setShowApiKeyInput(false);
-            }, []);
+            const fileInputRef = useRef(null);
 
             // Auto-scroll to bottom
             useEffect(() => {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, [messages]);
 
-            const saveApiKey = () => {
-                if (apiKey.trim()) {
-                    localStorage.setItem('anthropic_api_key', apiKey.trim());
-                    setShowApiKeyInput(false);
+            // Load documents on mount
+            useEffect(() => {
+                fetchDocuments();
+            }, []);
+
+            const fetchDocuments = async () => {
+                try {
+                    const response = await fetch('http://localhost:5000/api/documents');
+                    const data = await response.json();
+                    setDocuments(data.documents || []);
+                } catch (error) {
+                    console.error('Error fetching documents:', error);
                 }
             };
 
-            const clearApiKey = () => {
-                localStorage.removeItem('anthropic_api_key');
-                setApiKey('');
-                setShowApiKeyInput(true);
-                setMessages([]);
+            const handleFileUpload = async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                setIsUploading(true);
+
+                try {
+                    const response = await fetch('http://localhost:5000/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        alert(`Document "${file.name}" uploaded successfully!`);
+                        fetchDocuments();
+                    } else {
+                        alert(`Upload failed: ${data.error}`);
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    alert('Upload failed. Please try again.');
+                } finally {
+                    setIsUploading(false);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                }
+            };
+
+            const deleteDocument = async (docId) => {
+                if (!confirm('Are you sure you want to delete this document?')) return;
+
+                try {
+                    const response = await fetch(`http://localhost:5000/api/documents/${docId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        alert('Document deleted successfully!');
+                        fetchDocuments();
+                    } else {
+                        alert('Failed to delete document');
+                    }
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    alert('Failed to delete document');
+                }
             };
 
             const sendMessage = async () => {
@@ -57,12 +108,10 @@
                 setInput('');
                 setIsLoading(true);
 
-                // Add empty assistant message that we'll stream into
                 const assistantMessageIndex = messages.length + 1;
                 setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
                 try {
-                    // Call our backend instead of Anthropic directly
                     const response = await fetch('http://localhost:5000/api/chat', {
                         method: 'POST',
                         headers: {
@@ -130,7 +179,7 @@
                         const newMessages = [...prev];
                         newMessages[assistantMessageIndex] = {
                             role: 'assistant',
-                            content: `❌ Error: ${error.message}\n\nPlease check:\n- Your API key is correct\n- You have credits remaining\n- Your internet connection is stable`
+                            content: `❌ Error: ${error.message}\n\nPlease check:\n- Backend server is running\n- API key is configured\n- Internet connection is stable`
                         };
                         return newMessages;
                     });
@@ -150,54 +199,84 @@
                 setMessages([]);
             };
 
-            if (showApiKeyInput) {
-                return (
-                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Personal Research Assistant</h1>
-                            <p className="text-gray-600 mb-6">Enter your Anthropic API key to get started</p>
-                            
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        API Key
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={apiKey}
-                                        onChange={(e) => setApiKey(e.target.value)}
-                                        placeholder="sk-ant-..."
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        onKeyPress={(e) => e.key === 'Enter' && saveApiKey()}
-                                    />
-                                </div>
-                                
-                                <button
-                                    onClick={saveApiKey}
-                                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                                >
-                                    Start Chatting
-                                </button>
+            return (
+                <div className="flex h-screen bg-gray-50">
+                    {/* Sidebar */}
+                    <div className={`${showDocuments ? 'w-80' : 'w-0'} transition-all duration-300 bg-white border-r border-gray-200 overflow-hidden`}>
+                        <div className="p-4 border-b border-gray-200">
+                            <h2 className="text-lg font-semibold text-gray-800">Documents</h2>
+                            <p className="text-sm text-gray-500">{documents.length} uploaded</p>
+                        </div>
+                        
+                        <div className="p-4">
+                            <label className="flex items-center justify-center w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                                <span className="text-sm font-medium">
+                                    {isUploading ? 'Uploading...' : '📄 Upload Document'}
+                                </span>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    onChange={handleFileUpload}
+                                    accept=".pdf,.docx,.txt,.md"
+                                    className="hidden"
+                                    disabled={isUploading}
+                                />
+                            </label>
+                            <p className="text-xs text-gray-500 mt-2 text-center">PDF, DOCX, TXT, MD</p>
+                        </div>
 
-                                <div className="text-xs text-gray-500 mt-4">
-                                    <p>Your API key is stored locally in your browser.</p>
-                                    <p className="mt-1">Get your key at: <a href="https://console.anthropic.com/" target="_blank" className="text-blue-600 hover:underline">console.anthropic.com</a></p>
+                        <div className="overflow-y-auto" style={{ height: 'calc(100vh - 200px)' }}>
+                            {documents.length === 0 ? (
+                                <div className="p-4 text-center text-gray-500">
+                                    <p className="text-sm">No documents yet</p>
+                                    <p className="text-xs mt-1">Upload to get started!</p>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="space-y-2 p-4">
+                                    {documents.map(doc => (
+                                        <div key={doc.id} className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-gray-800 truncate">
+                                                        {doc.filename}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {doc.word_count} words • {doc.file_type.toUpperCase()}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">
+                                                        {new Date(doc.upload_date).toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={() => deleteDocument(doc.id)}
+                                                    className="ml-2 text-red-500 hover:text-red-700 text-sm"
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
-                );
-            }
 
-            return (
-                <div className="flex flex-col h-screen bg-gray-50">
-                    {/* Header */}
-                    <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-800">Research Assistant</h1>
-                            <p className="text-sm text-gray-500">Powered by Claude</p>
-                        </div>
-                        <div className="flex gap-2">
+                    {/* Main Chat Area */}
+                    <div className="flex-1 flex flex-col">
+                        {/* Header */}
+                        <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setShowDocuments(!showDocuments)}
+                                    className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                                >
+                                    {showDocuments ? '◀ Hide' : '📚 Documents'}
+                                </button>
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-800">Research Assistant</h1>
+                                    <p className="text-sm text-gray-500">Powered by Claude • {documents.length} documents</p>
+                                </div>
+                            </div>
                             <button
                                 onClick={clearChat}
                                 className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
@@ -205,81 +284,81 @@
                                 Clear Chat
                             </button>
                         </div>
-                    </div>
 
-                    {/* Messages */}
-                    <div className="flex-1 overflow-y-auto px-6 py-6">
-                        {messages.length === 0 ? (
-                            <div className="flex items-center justify-center h-full">
-                                <div className="text-center">
-                                    <div className="text-6xl mb-4">🔍</div>
-                                    <h2 className="text-2xl font-semibold text-gray-700 mb-2">Start Your Research</h2>
-                                    <p className="text-gray-500">Ask me anything! I'm here to help with your research.</p>
-                                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
-                                        <button
-                                            onClick={() => setInput("Explain quantum computing in simple terms")}
-                                            className="p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-                                        >
-                                            <p className="text-sm font-medium text-gray-700">Explain a concept</p>
-                                            <p className="text-xs text-gray-500">Quantum computing basics</p>
-                                        </button>
-                                        <button
-                                            onClick={() => setInput("Summarize the key points about machine learning")}
-                                            className="p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-                                        >
-                                            <p className="text-sm font-medium text-gray-700">Summarize a topic</p>
-                                            <p className="text-xs text-gray-500">Machine learning overview</p>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="max-w-3xl mx-auto space-y-6">
-                                {messages.map((message, index) => (
-                                    <div
-                                        key={index}
-                                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                                    >
-                                        <div
-                                            className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                                                message.role === 'user'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-white border border-gray-200 text-gray-800'
-                                            }`}
-                                        >
-                                            <div className="whitespace-pre-wrap break-words">
-                                                {message.content}
-                                            </div>
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto px-6 py-6">
+                            {messages.length === 0 ? (
+                                <div className="flex items-center justify-center h-full">
+                                    <div className="text-center">
+                                        <div className="text-6xl mb-4">🔍</div>
+                                        <h2 className="text-2xl font-semibold text-gray-700 mb-2">Start Your Research</h2>
+                                        <p className="text-gray-500 mb-4">Upload documents and ask questions!</p>
+                                        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                                            <button
+                                                onClick={() => setInput("Explain quantum computing in simple terms")}
+                                                className="p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
+                                            >
+                                                <p className="text-sm font-medium text-gray-700">Explain a concept</p>
+                                                <p className="text-xs text-gray-500">Quantum computing basics</p>
+                                            </button>
+                                            <button
+                                                onClick={() => setShowDocuments(true)}
+                                                className="p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
+                                            >
+                                                <p className="text-sm font-medium text-gray-700">Upload documents</p>
+                                                <p className="text-xs text-gray-500">Build your knowledge base</p>
+                                            </button>
                                         </div>
                                     </div>
-                                ))}
-                                <div ref={messagesEndRef} />
-                            </div>
-                        )}
-                    </div>
+                                </div>
+                            ) : (
+                                <div className="max-w-3xl mx-auto space-y-6">
+                                    {messages.map((message, index) => (
+                                        <div
+                                            key={index}
+                                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                        >
+                                            <div
+                                                className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                                                    message.role === 'user'
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-white border border-gray-200 text-gray-800'
+                                                }`}
+                                            >
+                                                <div className="whitespace-pre-wrap break-words">
+                                                    {message.content}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div ref={messagesEndRef} />
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Input */}
-                    <div className="border-t border-gray-200 bg-white px-6 py-4">
-                        <div className="max-w-3xl mx-auto">
-                            <div className="flex gap-3">
-                                <textarea
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyPress={handleKeyPress}
-                                    placeholder="Ask me anything about your research..."
-                                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                                    rows="2"
-                                    disabled={isLoading}
-                                />
-                                <button
-                                    onClick={sendMessage}
-                                    disabled={isLoading || !input.trim()}
-                                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-                                >
-                                    {isLoading ? '...' : 'Send'}
-                                </button>
+                        {/* Input */}
+                        <div className="border-t border-gray-200 bg-white px-6 py-4">
+                            <div className="max-w-3xl mx-auto">
+                                <div className="flex gap-3">
+                                    <textarea
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="Ask me anything about your research..."
+                                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                        rows="2"
+                                        disabled={isLoading}
+                                    />
+                                    <button
+                                        onClick={sendMessage}
+                                        disabled={isLoading || !input.trim()}
+                                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                    >
+                                        {isLoading ? '...' : 'Send'}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Press Enter to send, Shift+Enter for new line</p>
                             </div>
-                            <p className="text-xs text-gray-500 mt-2">Press Enter to send, Shift+Enter for new line</p>
                         </div>
                     </div>
                 </div>

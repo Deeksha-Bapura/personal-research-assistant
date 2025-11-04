@@ -1,9 +1,12 @@
-# API Keys and Secrets (CRITICAL - never commit these!)
+# API Keys and Secrets (never commit these!)
 .env
 .env.local
 *.key
 secrets.txt
-backend/.env
+
+# Uploaded documents (user data)
+backend/uploads/
+uploads/
 
 # OS Files
 .DS_Store
@@ -21,16 +24,14 @@ desktop.ini
 *.log
 logs/
 
-# Python
+# Dependencies (for when we add backend)
+node_modules/
 __pycache__/
 *.pyc
-backend/venv/
-backend/env/
 venv/
 env/
-*.py[cod]
 
-# Build outputs
+# Build outputs (for future phases)
 dist/
 build/
 *.bundle.js
