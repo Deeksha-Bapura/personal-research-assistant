@@ -4,17 +4,23 @@ An AI-powered research assistant built with Claude (Anthropic) to help with rese
 
 ## 🎯 Project Goals
 
-**Phase 1 (Current):** Basic LLM chat interface with conversation history
-- ✅ Clean chat interface
-- ✅ Streaming responses
-- ✅ Conversation memory
-- ✅ API key management
+🎯 Features
+✅ Phase 1: Conversational AI
 
-**Phase 2 (Coming Soon):** RAG Integration
-- 📄 Document upload (PDF, TXT, DOCX, MD)
-- 🔍 Semantic search across documents
-- 📚 Chat with your knowledge base
-- 🎯 Source citations
+Real-time chat interface with Claude API (Anthropic)
+Streaming responses for responsive user experience
+Conversation history with context awareness
+Clean, modern UI with Tailwind CSS
+
+✅ Phase 2: RAG Implementation
+
+Document Upload: Support for PDF, DOCX, TXT, and Markdown files
+Text Processing: Intelligent chunking with configurable overlap (1000 chars, 200 char overlap)
+Vector Embeddings: Semantic embeddings using sentence-transformers (all-MiniLM-L6-v2)
+Vector Database: ChromaDB for efficient similarity search
+Semantic Search: Find relevant information using cosine similarity
+Context-Aware Responses: Claude references your uploaded documents automatically
+Document Management: Upload, view, and delete documents with metadata tracking
 
 **Phase 3 (Future):** Advanced Features
 - 📁 Document collections
