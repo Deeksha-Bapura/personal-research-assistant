@@ -8,6 +8,9 @@ from werkzeug.utils import secure_filename
 import PyPDF2
 from docx import Document
 from datetime import datetime
+import chromadb
+from sentence_transformers import SentenceTransformer
+from chromadb.config import Settings
 
 # Load environment variables
 load_dotenv()
@@ -23,15 +26,53 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'md'}
 MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
 
-# Create uploads directory if it doesn't exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Chunking parameters
+CHUNK_SIZE = 1000  # characters
+CHUNK_OVERLAP = 200  # characters overlap between chunks
 
-# In-memory storage for documents (will use PostgreSQL in Week 2)
+# Create necessary directories
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs('chroma_db', exist_ok=True)
+
+# Initialize embedding model (this loads once on startup)
+print("Loading embedding model...")
+embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+print("Embedding model loaded!")
+
+# Initialize Chroma client
+chroma_client = chromadb.PersistentClient(path="./chroma_db")
+collection = chroma_client.get_or_create_collection(
+    name="documents",
+    metadata={"hnsw:space": "cosine"}
+)
+
+# In-memory storage for documents
 documents_db = []
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
+    """Split text into overlapping chunks"""
+    chunks = []
+    start = 0
+    text_length = len(text)
+    
+    while start < text_length:
+        end = start + chunk_size
+        chunk = text[start:end]
+        
+        if chunk.strip():  # Only add non-empty chunks
+            chunks.append({
+                'text': chunk,
+                'start_pos': start,
+                'end_pos': min(end, text_length)
+            })
+        
+        start += chunk_size - overlap
+    
+    return chunks
 
 def extract_text_from_pdf(file_path):
     """Extract text from PDF file"""
@@ -80,7 +121,7 @@ def process_document(file_path, filename):
 
 @app.route('/api/upload', methods=['POST'])
 def upload_document():
-    """Handle document upload"""
+    """Handle document upload and create embeddings"""
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
@@ -106,16 +147,49 @@ def upload_document():
         text_content = process_document(file_path, filename)
         
         if text_content is None:
-            os.remove(file_path)  # Clean up
+            os.remove(file_path)
             return jsonify({'error': 'Failed to extract text from document'}), 500
         
-        # Calculate some basic stats
+        # Create chunks
+        chunks = chunk_text(text_content)
+        
+        if not chunks:
+            os.remove(file_path)
+            return jsonify({'error': 'Document is empty or could not be chunked'}), 400
+        
+        # Generate embeddings and store in Chroma
+        doc_id = len(documents_db) + 1
+        
+        for i, chunk_data in enumerate(chunks):
+            text = chunk_data['text']
+            
+            # Generate embedding
+            embedding = embedding_model.encode(text).tolist()
+            
+            # Create unique ID for this chunk
+            chunk_id = f"doc_{doc_id}_chunk_{i}"
+            
+            # Add to Chroma with metadata
+            collection.add(
+                ids=[chunk_id],
+                embeddings=[embedding],
+                documents=[text],
+                metadatas=[{
+                    'doc_id': doc_id,
+                    'filename': filename,
+                    'chunk_index': i,
+                    'start_pos': chunk_data['start_pos'],
+                    'end_pos': chunk_data['end_pos']
+                }]
+            )
+        
+        # Calculate stats
         word_count = len(text_content.split())
         char_count = len(text_content)
         
         # Store document metadata
         doc_metadata = {
-            'id': len(documents_db) + 1,
+            'id': doc_id,
             'filename': filename,
             'unique_filename': unique_filename,
             'file_path': file_path,
@@ -123,17 +197,18 @@ def upload_document():
             'file_type': filename.rsplit('.', 1)[1].lower(),
             'word_count': word_count,
             'char_count': char_count,
-            'text_content': text_content[:500] + '...' if len(text_content) > 500 else text_content  # Store preview
+            'chunk_count': len(chunks),
+            'text_preview': text_content[:500] + '...' if len(text_content) > 500 else text_content
         }
         
         documents_db.append(doc_metadata)
         
-        # Return response without full text content
-        response_data = {k: v for k, v in doc_metadata.items() if k != 'text_content'}
+        # Return response
+        response_data = {k: v for k, v in doc_metadata.items() if k != 'text_preview'}
         response_data['preview'] = text_content[:200] + '...' if len(text_content) > 200 else text_content
         
         return jsonify({
-            'message': 'Document uploaded successfully',
+            'message': 'Document uploaded and indexed successfully',
             'document': response_data
         }), 201
         
@@ -145,10 +220,9 @@ def upload_document():
 def get_documents():
     """Get list of all uploaded documents"""
     try:
-        # Return documents without full text content
         docs_list = []
         for doc in documents_db:
-            doc_info = {k: v for k, v in doc.items() if k not in ['text_content', 'file_path']}
+            doc_info = {k: v for k, v in doc.items() if k not in ['text_preview', 'file_path']}
             docs_list.append(doc_info)
         
         return jsonify({'documents': docs_list}), 200
@@ -158,7 +232,7 @@ def get_documents():
 
 @app.route('/api/documents/<int:doc_id>', methods=['DELETE'])
 def delete_document(doc_id):
-    """Delete a document"""
+    """Delete a document and its embeddings"""
     try:
         global documents_db
         
@@ -167,6 +241,14 @@ def delete_document(doc_id):
         
         if not doc:
             return jsonify({'error': 'Document not found'}), 404
+        
+        # Delete embeddings from Chroma
+        # Get all chunk IDs for this document
+        chunk_ids = [f"doc_{doc_id}_chunk_{i}" for i in range(doc['chunk_count'])]
+        try:
+            collection.delete(ids=chunk_ids)
+        except Exception as e:
+            print(f"Error deleting embeddings: {e}")
         
         # Delete file from disk
         if os.path.exists(doc['file_path']):
@@ -181,20 +263,96 @@ def delete_document(doc_id):
         print(f"Delete error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/search', methods=['POST'])
+def search_documents():
+    """Search documents using semantic similarity"""
+    try:
+        data = request.json
+        query = data.get('query', '')
+        top_k = data.get('top_k', 3)
+        
+        if not query:
+            return jsonify({'error': 'Query is required'}), 400
+        
+        # Generate embedding for query
+        query_embedding = embedding_model.encode(query).tolist()
+        
+        # Search in Chroma
+        results = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k
+        )
+        
+        # Format results
+        search_results = []
+        if results['documents'] and len(results['documents'][0]) > 0:
+            for i in range(len(results['documents'][0])):
+                search_results.append({
+                    'text': results['documents'][0][i],
+                    'metadata': results['metadatas'][0][i],
+                    'distance': results['distances'][0][i] if 'distances' in results else None
+                })
+        
+        return jsonify({
+            'query': query,
+            'results': search_results
+        }), 200
+        
+    except Exception as e:
+        print(f"Search error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    """
-    Endpoint to handle chat requests and stream responses from Anthropic API
-    """
+    """Handle chat requests with RAG - retrieve relevant context from documents"""
     try:
         data = request.json
         messages = data.get('messages', [])
+        use_rag = data.get('use_rag', True)  # Enable RAG by default
         
         if not messages:
             return jsonify({'error': 'No messages provided'}), 400
         
         if not ANTHROPIC_API_KEY:
             return jsonify({'error': 'API key not configured'}), 500
+
+        # Get the last user message for context retrieval
+        last_user_message = next((m for m in reversed(messages) if m['role'] == 'user'), None)
+        
+        # Build system prompt
+        system_prompt = 'You are a helpful research assistant. Help users with their research questions, summarize information, explain concepts clearly, and assist with learning. Be concise but thorough.'
+        
+        # If RAG is enabled and we have documents, retrieve relevant context
+        if use_rag and last_user_message and len(documents_db) > 0:
+            query = last_user_message['content']
+            
+            # Generate embedding for query
+            query_embedding = embedding_model.encode(query).tolist()
+            
+            # Search for relevant chunks
+            results = collection.query(
+                query_embeddings=[query_embedding],
+                n_results=3
+            )
+            
+            # Build context from results
+            if results['documents'] and len(results['documents'][0]) > 0:
+                context_parts = []
+                for i, doc_text in enumerate(results['documents'][0]):
+                    metadata = results['metadatas'][0][i]
+                    context_parts.append(f"[Source: {metadata['filename']}]\n{doc_text}")
+                
+                context = "\n\n".join(context_parts)
+                
+                # Update system prompt with context
+                system_prompt = f"""You are a helpful research assistant. You have access to the user's uploaded documents.
+
+Use the following context from the user's documents to answer their question. If the context is relevant, cite the source filename. If the context doesn't contain relevant information, you can use your general knowledge but mention that it's not from their documents.
+
+CONTEXT FROM DOCUMENTS:
+{context}
+
+Answer the user's question based on this context."""
 
         # Prepare request to Anthropic API
         headers = {
@@ -206,7 +364,7 @@ def chat():
         payload = {
             'model': 'claude-sonnet-4-20250514',
             'max_tokens': 4096,
-            'system': 'You are a helpful research assistant. Help users with their research questions, summarize information, explain concepts clearly, and assist with learning. Be concise but thorough.',
+            'system': system_prompt,
             'messages': messages,
             'stream': True
         }
@@ -228,7 +386,7 @@ def chat():
         return Response(generate(), mimetype='text/event-stream')
     
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Chat error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/health', methods=['GET'])
@@ -237,7 +395,9 @@ def health():
     return jsonify({
         'status': 'healthy',
         'api_key_configured': bool(ANTHROPIC_API_KEY),
-        'documents_count': len(documents_db)
+        'documents_count': len(documents_db),
+        'embeddings_count': collection.count(),
+        'embedding_model': 'all-MiniLM-L6-v2'
     })
 
 if __name__ == '__main__':
@@ -245,8 +405,13 @@ if __name__ == '__main__':
         print("WARNING: ANTHROPIC_API_KEY not found in environment variables")
         print("Please create a .env file with your API key")
     else:
-        print("API key loaded successfully!")
+        print("✓ API key loaded successfully!")
     
-    print(f"Upload folder: {os.path.abspath(UPLOAD_FOLDER)}")
-    print("Starting server on http://localhost:5000")
+    print(f"✓ Upload folder: {os.path.abspath(UPLOAD_FOLDER)}")
+    print(f"✓ Chroma DB: {os.path.abspath('chroma_db')}")
+    print(f"✓ Embedding model: all-MiniLM-L6-v2")
+    print(f"✓ Documents in DB: {len(documents_db)}")
+    print(f"✓ Vector embeddings: {collection.count()}")
+    print("\nStarting server on http://localhost:5000")
+    print("RAG is ENABLED - uploaded documents will be searchable!\n")
     app.run(debug=True, port=5000)
