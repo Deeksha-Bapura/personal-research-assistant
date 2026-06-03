@@ -11,12 +11,13 @@ from datetime import datetime
 import chromadb
 from sentence_transformers import SentenceTransformer
 from chromadb.config import Settings
-
-# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+from agent import agent_bp
+app.register_blueprint(agent_bp)
 
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'

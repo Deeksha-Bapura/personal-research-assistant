@@ -3,362 +3,539 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Research Assistant</title>
+    <title>Research Assistant</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'IBM Plex Sans', sans-serif; background: #0f1117; color: #e2e8f0; margin: 0; }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+
+        /* Tab styles */
+        .tab-active { background: #1e293b; color: #38bdf8; border-bottom: 2px solid #38bdf8; }
+        .tab-inactive { color: #64748b; border-bottom: 2px solid transparent; }
+        .tab-inactive:hover { color: #94a3b8; }
+
+        /* Tool badge */
+        .tool-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #0f172a; border: 1px solid #1e3a5f;
+            color: #38bdf8; font-size: 11px; padding: 2px 8px;
+            border-radius: 4px; font-family: 'IBM Plex Mono', monospace;
+        }
+        .tool-badge.flag { border-color: #7f1d1d; color: #f87171; background: #1a0a0a; }
+
+        /* Message bubbles */
+        .msg-user { background: #1d4ed8; color: white; border-radius: 16px 16px 4px 16px; }
+        .msg-assistant { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; border-radius: 16px 16px 16px 4px; }
+        .msg-agent { background: #0f1f2e; border: 1px solid #1e3a5f; color: #e2e8f0; border-radius: 16px 16px 16px 4px; }
+
+        /* Thinking animation */
+        .thinking span {
+            display: inline-block; width: 6px; height: 6px;
+            background: #38bdf8; border-radius: 50%; margin: 0 2px;
+            animation: bounce 1.2s infinite;
+        }
+        .thinking span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+            40% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* Agent status bar */
+        .agent-status {
+            background: #0a1628; border: 1px solid #1e3a5f;
+            border-radius: 8px; padding: 8px 12px;
+            font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+            color: #38bdf8; margin-bottom: 8px;
+        }
+        .agent-status.flagged { border-color: #7f1d1d; color: #f87171; background: #1a0808; }
+
+        /* Input area */
+        .input-area { background: #1e293b; border: 1px solid #334155; border-radius: 12px; transition: border-color 0.2s; }
+        .input-area:focus-within { border-color: #38bdf8; }
+        textarea { background: transparent; color: #e2e8f0; outline: none; width: 100%; resize: none; font-family: 'IBM Plex Sans', sans-serif; }
+        textarea::placeholder { color: #475569; }
+
+        /* Sidebar */
+        .sidebar { background: #0a0e17; border-right: 1px solid #1e293b; }
+
+        /* Doc card */
+        .doc-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; transition: border-color 0.2s; }
+        .doc-card:hover { border-color: #475569; }
+
+        /* Send button */
+        .btn-send { background: #1d4ed8; color: white; border-radius: 8px; font-weight: 500; transition: background 0.2s; }
+        .btn-send:hover:not(:disabled) { background: #2563eb; }
+        .btn-send:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
+
+        /* Upload button */
+        .btn-upload { background: #0f3460; border: 1px solid #1e4d8c; color: #7dd3fc; border-radius: 8px; transition: all 0.2s; cursor: pointer; }
+        .btn-upload:hover { background: #1e4d8c; }
+
+        /* Clear button */
+        .btn-clear { background: #1e293b; border: 1px solid #334155; color: #64748b; border-radius: 8px; transition: all 0.2s; }
+        .btn-clear:hover { border-color: #475569; color: #94a3b8; }
+
+        /* Prose formatting for agent messages */
+        .agent-prose h2, .agent-prose h3 { color: #7dd3fc; font-weight: 600; margin: 12px 0 6px; }
+        .agent-prose h2 { font-size: 15px; }
+        .agent-prose h3 { font-size: 13px; }
+        .agent-prose strong { color: #bae6fd; }
+        .agent-prose ul { padding-left: 16px; margin: 6px 0; }
+        .agent-prose li { margin: 3px 0; color: #cbd5e1; }
+        .agent-prose p { margin: 6px 0; line-height: 1.6; }
+        .agent-prose code { background: #0f172a; padding: 1px 5px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #38bdf8; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.25s ease-out; }
+    </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+        const BASE = 'http://localhost:5000';
 
-        function App() {
+        // ── Simple markdown-like renderer for agent responses ──
+        function AgentText({ text }) {
+            const lines = text.split('\n');
+            const elements = [];
+            lines.forEach((line, i) => {
+                if (line.startsWith('## ')) {
+                    elements.push(<h2 key={i}>{line.slice(3)}</h2>);
+                } else if (line.startsWith('### ')) {
+                    elements.push(<h3 key={i}>{line.slice(4)}</h3>);
+                } else if (line.startsWith('- ') || line.startsWith('• ')) {
+                    elements.push(<li key={i}>{renderInline(line.slice(2))}</li>);
+                } else if (line.match(/^\d+\. /)) {
+                    elements.push(<li key={i}>{renderInline(line.replace(/^\d+\. /, ''))}</li>);
+                } else if (line.trim()) {
+                    elements.push(<p key={i}>{renderInline(line)}</p>);
+                } else {
+                    elements.push(<br key={i} />);
+                }
+            });
+            return <div className="agent-prose">{elements}</div>;
+        }
+
+        function renderInline(text) {
+            const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+            return parts.map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) return <strong key={i}>{part.slice(2, -2)}</strong>;
+                if (part.startsWith('`') && part.endsWith('`')) return <code key={i}>{part.slice(1, -1)}</code>;
+                return part;
+            });
+        }
+
+        // ── Tool badge icons ──
+        const TOOL_ICONS = {
+            search_documents: '📄',
+            web_search: '🌐',
+            summarize_topic: '📊',
+            flag_for_review: '🚩',
+        };
+
+        // ── CHAT TAB ──────────────────────────────────────────────────────────
+        function ChatTab({ documents }) {
             const [messages, setMessages] = useState([]);
             const [input, setInput] = useState('');
             const [isLoading, setIsLoading] = useState(false);
-            const [documents, setDocuments] = useState([]);
-            const [isUploading, setIsUploading] = useState(false);
-            const [showDocuments, setShowDocuments] = useState(false);
             const messagesEndRef = useRef(null);
-            const fileInputRef = useRef(null);
 
-            // Auto-scroll to bottom
-            useEffect(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, [messages]);
-
-            // Load documents on mount
-            useEffect(() => {
-                fetchDocuments();
-            }, []);
-
-            const fetchDocuments = async () => {
-                try {
-                    const response = await fetch('http://localhost:5000/api/documents');
-                    const data = await response.json();
-                    setDocuments(data.documents || []);
-                } catch (error) {
-                    console.error('Error fetching documents:', error);
-                }
-            };
-
-            const handleFileUpload = async (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                const formData = new FormData();
-                formData.append('file', file);
-
-                setIsUploading(true);
-
-                try {
-                    const response = await fetch('http://localhost:5000/api/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        alert(`Document "${file.name}" uploaded successfully!`);
-                        fetchDocuments();
-                    } else {
-                        alert(`Upload failed: ${data.error}`);
-                    }
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    alert('Upload failed. Please try again.');
-                } finally {
-                    setIsUploading(false);
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                    }
-                }
-            };
-
-            const deleteDocument = async (docId) => {
-                if (!confirm('Are you sure you want to delete this document?')) return;
-
-                try {
-                    const response = await fetch(`http://localhost:5000/api/documents/${docId}`, {
-                        method: 'DELETE'
-                    });
-
-                    if (response.ok) {
-                        alert('Document deleted successfully!');
-                        fetchDocuments();
-                    } else {
-                        alert('Failed to delete document');
-                    }
-                } catch (error) {
-                    console.error('Delete error:', error);
-                    alert('Failed to delete document');
-                }
-            };
+            useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
             const sendMessage = async () => {
                 if (!input.trim() || isLoading) return;
-
                 const userMessage = { role: 'user', content: input };
                 setMessages(prev => [...prev, userMessage]);
                 setInput('');
                 setIsLoading(true);
-
-                const assistantMessageIndex = messages.length + 1;
+                const assistantIndex = messages.length + 1;
                 setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
                 try {
-                    const response = await fetch('http://localhost:5000/api/chat', {
+                    const response = await fetch(`${BASE}/api/chat`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            messages: messages.concat([userMessage]).map(msg => ({
-                                role: msg.role,
-                                content: msg.content
-                            }))
-                        })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ messages: messages.concat([userMessage]).map(m => ({ role: m.role, content: m.content })) })
                     });
-
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(`API Error (${response.status}): ${errorData.error?.message || response.statusText}`);
-                    }
+                    if (!response.ok) throw new Error(`API Error ${response.status}`);
 
                     const reader = response.body.getReader();
                     const decoder = new TextDecoder();
-                    let accumulatedContent = '';
-                    let buffer = '';
+                    let accumulated = '', buffer = '';
 
                     while (true) {
                         const { done, value } = await reader.read();
                         if (done) break;
-
                         buffer += decoder.decode(value, { stream: true });
                         const lines = buffer.split('\n');
                         buffer = lines.pop() || '';
-
                         for (const line of lines) {
                             if (line.startsWith('data: ')) {
                                 const data = line.slice(6).trim();
                                 if (!data || data === '[DONE]') continue;
-
                                 try {
                                     const parsed = JSON.parse(data);
-                                    
                                     if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-                                        accumulatedContent += parsed.delta.text;
-                                        
+                                        accumulated += parsed.delta.text;
                                         setMessages(prev => {
-                                            const newMessages = [...prev];
-                                            newMessages[assistantMessageIndex] = {
-                                                role: 'assistant',
-                                                content: accumulatedContent
-                                            };
-                                            return newMessages;
+                                            const msgs = [...prev];
+                                            msgs[assistantIndex] = { role: 'assistant', content: accumulated };
+                                            return msgs;
                                         });
                                     }
-                                } catch (e) {
-                                    console.warn('Failed to parse SSE data:', data, e);
-                                }
+                                } catch (e) {}
                             }
                         }
                     }
-
-                    if (!accumulatedContent) {
-                        throw new Error('No response received from the API');
-                    }
                 } catch (error) {
-                    console.error('Full error:', error);
                     setMessages(prev => {
-                        const newMessages = [...prev];
-                        newMessages[assistantMessageIndex] = {
-                            role: 'assistant',
-                            content: `❌ Error: ${error.message}\n\nPlease check:\n- Backend server is running\n- API key is configured\n- Internet connection is stable`
-                        };
-                        return newMessages;
+                        const msgs = [...prev];
+                        msgs[assistantIndex] = { role: 'assistant', content: `❌ Error: ${error.message}` };
+                        return msgs;
                     });
                 } finally {
                     setIsLoading(false);
                 }
             };
 
-            const handleKeyPress = (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
+            return (
+                <div className="flex flex-col h-full">
+                    <div className="flex-1 overflow-y-auto px-6 py-6">
+                        {messages.length === 0 ? (
+                            <div className="flex items-center justify-center h-full">
+                                <div className="text-center">
+                                    <div className="text-5xl mb-4">💬</div>
+                                    <h2 className="text-xl font-semibold text-slate-300 mb-1">RAG Chat</h2>
+                                    <p className="text-slate-500 text-sm">Ask questions about your uploaded documents</p>
+                                    <div className="mt-6 grid grid-cols-2 gap-3 max-w-lg mx-auto">
+                                        {["Summarize the key points", "What are the main topics?"].map(s => (
+                                            <button key={s} onClick={() => setInput(s)}
+                                                className="p-3 text-left bg-slate-800 border border-slate-700 rounded-lg hover:border-sky-700 transition-all text-sm text-slate-300">
+                                                {s}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="max-w-3xl mx-auto space-y-4">
+                                {messages.map((msg, i) => (
+                                    <div key={i} className={`flex fade-in ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        {msg.role === 'assistant' && (
+                                            <div className="w-7 h-7 rounded-full bg-sky-900 border border-sky-700 flex items-center justify-center text-xs mr-2 mt-1 flex-shrink-0">🤖</div>
+                                        )}
+                                        <div className={`max-w-[80%] px-4 py-3 text-sm ${msg.role === 'user' ? 'msg-user' : 'msg-assistant'}`}>
+                                            {msg.role === 'assistant' && !msg.content ? (
+                                                <div className="thinking"><span/><span/><span/></div>
+                                            ) : (
+                                                <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                <div ref={messagesEndRef} />
+                            </div>
+                        )}
+                    </div>
+                    <div className="px-6 py-4 border-t border-slate-800">
+                        <div className="max-w-3xl mx-auto">
+                            <div className="input-area flex gap-2 p-2">
+                                <textarea
+                                    value={input} onChange={e => setInput(e.target.value)}
+                                    onKeyPress={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }}}
+                                    placeholder="Ask about your documents..."
+                                    rows="2" disabled={isLoading}
+                                    className="flex-1 px-3 py-2 text-sm"
+                                />
+                                <button onClick={sendMessage} disabled={isLoading || !input.trim()}
+                                    className="btn-send px-5 py-2 text-sm self-end">
+                                    {isLoading ? '...' : 'Send'}
+                                </button>
+                            </div>
+                            <p className="text-xs text-slate-600 mt-2">Enter to send • Shift+Enter for new line</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ── AGENT TAB ─────────────────────────────────────────────────────────
+        function AgentTab() {
+            const [messages, setMessages] = useState([]);
+            const [input, setInput] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [sessionId] = useState(() => 'session-' + Date.now());
+            const messagesEndRef = useRef(null);
+
+            useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+            const STARTERS = [
+                "What are the latest Basel III capital requirements?",
+                "Summarize all uploaded documents",
+                "Search for recent AML regulations",
+                "What compliance topics are in my documents?",
+            ];
+
+            const sendMessage = async () => {
+                if (!input.trim() || isLoading) return;
+                const userMsg = input;
+                setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+                setInput('');
+                setIsLoading(true);
+
+                try {
+                    const response = await fetch(`${BASE}/api/agent`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: userMsg, session_id: sessionId })
+                    });
+                    const data = await response.json();
+                    setMessages(prev => [...prev, {
+                        role: 'agent',
+                        content: data.answer,
+                        tools_used: data.tools_used || [],
+                        flagged: data.flagged || false,
+                        iterations: data.iterations || 1,
+                    }]);
+                } catch (error) {
+                    setMessages(prev => [...prev, {
+                        role: 'agent', content: `❌ Error: ${error.message}`,
+                        tools_used: [], flagged: false, iterations: 0,
+                    }]);
+                } finally {
+                    setIsLoading(false);
                 }
             };
 
-            const clearChat = () => {
+            const clearSession = async () => {
+                await fetch(`${BASE}/api/agent/session/${sessionId}`, { method: 'DELETE' });
                 setMessages([]);
             };
 
             return (
-                <div className="flex h-screen bg-gray-50">
-                    {/* Sidebar */}
-                    <div className={`${showDocuments ? 'w-80' : 'w-0'} transition-all duration-300 bg-white border-r border-gray-200 overflow-hidden`}>
-                        <div className="p-4 border-b border-gray-200">
-                            <h2 className="text-lg font-semibold text-gray-800">Documents</h2>
-                            <p className="text-sm text-gray-500">{documents.length} uploaded</p>
-                        </div>
-                        
-                        <div className="p-4">
-                            <label className="flex items-center justify-center w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
-                                <span className="text-sm font-medium">
-                                    {isUploading ? 'Uploading...' : '📄 Upload Document'}
-                                </span>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    onChange={handleFileUpload}
-                                    accept=".pdf,.docx,.txt,.md"
-                                    className="hidden"
-                                    disabled={isUploading}
-                                />
-                            </label>
-                            <p className="text-xs text-gray-500 mt-2 text-center">PDF, DOCX, TXT, MD</p>
-                        </div>
-
-                        <div className="overflow-y-auto" style={{ height: 'calc(100vh - 200px)' }}>
-                            {documents.length === 0 ? (
-                                <div className="p-4 text-center text-gray-500">
-                                    <p className="text-sm">No documents yet</p>
-                                    <p className="text-xs mt-1">Upload to get started!</p>
+                <div className="flex flex-col h-full">
+                    <div className="flex-1 overflow-y-auto px-6 py-6">
+                        {messages.length === 0 ? (
+                            <div className="flex items-center justify-center h-full">
+                                <div className="text-center">
+                                    <div className="text-5xl mb-4">🤖</div>
+                                    <h2 className="text-xl font-semibold text-slate-300 mb-1">Agentic Research</h2>
+                                    <p className="text-slate-500 text-sm mb-1">Multi-step reasoning • Web search • Document analysis</p>
+                                    <div className="flex justify-center gap-2 mt-3 mb-6">
+                                        {['search_documents','web_search','summarize_topic','flag_for_review'].map(t => (
+                                            <span key={t} className="tool-badge">{TOOL_ICONS[t]} {t.replace(/_/g,' ')}</span>
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
+                                        {STARTERS.map(s => (
+                                            <button key={s} onClick={() => setInput(s)}
+                                                className="p-3 text-left bg-slate-800 border border-slate-700 rounded-lg hover:border-sky-700 transition-all text-xs text-slate-300">
+                                                {s}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            ) : (
-                                <div className="space-y-2 p-4">
-                                    {documents.map(doc => (
-                                        <div key={doc.id} className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors">
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-gray-800 truncate">
-                                                        {doc.filename}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500">
-                                                        {doc.word_count} words • {doc.file_type.toUpperCase()}
-                                                    </p>
-                                                    <p className="text-xs text-gray-400">
-                                                        {new Date(doc.upload_date).toLocaleDateString()}
-                                                    </p>
+                            </div>
+                        ) : (
+                            <div className="max-w-3xl mx-auto space-y-4">
+                                {messages.map((msg, i) => (
+                                    <div key={i} className={`fade-in flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        {msg.role !== 'user' && (
+                                            <div className="w-7 h-7 rounded-full bg-sky-900 border border-sky-700 flex items-center justify-center text-xs mr-2 mt-1 flex-shrink-0">⚡</div>
+                                        )}
+                                        <div className="max-w-[85%]">
+                                            {/* Tool usage bar */}
+                                            {msg.role === 'agent' && msg.tools_used?.length > 0 && (
+                                                <div className={`agent-status ${msg.flagged ? 'flagged' : ''} mb-2`}>
+                                                    <span className="opacity-60 mr-2">tools used →</span>
+                                                    {msg.tools_used.map((t, j) => (
+                                                        <span key={j} className={`tool-badge mr-1 ${t === 'flag_for_review' ? 'flag' : ''}`}>
+                                                            {TOOL_ICONS[t] || '🔧'} {t.replace(/_/g,' ')}
+                                                        </span>
+                                                    ))}
+                                                    <span className="opacity-40 ml-2 text-xs">{msg.iterations} step{msg.iterations !== 1 ? 's' : ''}</span>
                                                 </div>
-                                                <button
-                                                    onClick={() => deleteDocument(doc.id)}
-                                                    className="ml-2 text-red-500 hover:text-red-700 text-sm"
-                                                >
-                                                    🗑️
-                                                </button>
+                                            )}
+                                            <div className={`px-4 py-3 text-sm ${msg.role === 'user' ? 'msg-user' : 'msg-agent'}`}>
+                                                {msg.role === 'agent'
+                                                    ? <AgentText text={msg.content} />
+                                                    : <div className="whitespace-pre-wrap">{msg.content}</div>
+                                                }
                                             </div>
+                                            {msg.flagged && (
+                                                <div className="mt-1 text-xs text-red-400 font-mono flex items-center gap-1">
+                                                    🚩 flagged for human review
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
+                                    </div>
+                                ))}
+                                {isLoading && (
+                                    <div className="flex justify-start fade-in">
+                                        <div className="w-7 h-7 rounded-full bg-sky-900 border border-sky-700 flex items-center justify-center text-xs mr-2 mt-1">⚡</div>
+                                        <div className="msg-agent px-4 py-3">
+                                            <div className="agent-status mb-2 text-xs opacity-60">agent is reasoning...</div>
+                                            <div className="thinking"><span/><span/><span/></div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="px-6 py-4 border-t border-slate-800">
+                        <div className="max-w-3xl mx-auto">
+                            <div className="input-area flex gap-2 p-2">
+                                <textarea
+                                    value={input} onChange={e => setInput(e.target.value)}
+                                    onKeyPress={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }}}
+                                    placeholder="Ask the agent anything — it will search docs, web, and reason across sources..."
+                                    rows="2" disabled={isLoading}
+                                    className="flex-1 px-3 py-2 text-sm"
+                                />
+                                <button onClick={sendMessage} disabled={isLoading || !input.trim()}
+                                    className="btn-send px-5 py-2 text-sm self-end">
+                                    {isLoading ? '...' : 'Run'}
+                                </button>
+                            </div>
+                            <div className="flex justify-between mt-2">
+                                <p className="text-xs text-slate-600">Enter to send • Agent may take 10–20s for complex queries</p>
+                                <button onClick={clearSession} className="text-xs text-slate-600 hover:text-slate-400 transition-colors">
+                                    Clear session
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ── MAIN APP ──────────────────────────────────────────────────────────
+        function App() {
+            const [tab, setTab] = useState('chat');
+            const [documents, setDocuments] = useState([]);
+            const [isUploading, setIsUploading] = useState(false);
+            const [showDocuments, setShowDocuments] = useState(false);
+            const fileInputRef = useRef(null);
+
+            useEffect(() => { fetchDocuments(); }, []);
+
+            const fetchDocuments = async () => {
+                try {
+                    const res = await fetch(`${BASE}/api/documents`);
+                    const data = await res.json();
+                    setDocuments(data.documents || []);
+                } catch (e) { console.error(e); }
+            };
+
+            const handleFileUpload = async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                setIsUploading(true);
+                try {
+                    const res = await fetch(`${BASE}/api/upload`, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (res.ok) { alert(`"${file.name}" uploaded!`); fetchDocuments(); }
+                    else alert(`Upload failed: ${data.error}`);
+                } catch (e) { alert('Upload failed.'); }
+                finally {
+                    setIsUploading(false);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                }
+            };
+
+            const deleteDocument = async (docId) => {
+                if (!confirm('Delete this document?')) return;
+                try {
+                    const res = await fetch(`${BASE}/api/documents/${docId}`, { method: 'DELETE' });
+                    if (res.ok) { fetchDocuments(); }
+                } catch (e) {}
+            };
+
+            return (
+                <div className="flex h-screen overflow-hidden">
+                    {/* Sidebar */}
+                    <div className={`sidebar flex-shrink-0 transition-all duration-300 overflow-hidden flex flex-col ${showDocuments ? 'w-72' : 'w-0'}`}>
+                        <div className="p-4 border-b border-slate-800">
+                            <p className="text-xs text-slate-500 mono uppercase tracking-widest mb-1">Knowledge Base</p>
+                            <p className="text-slate-300 font-medium">{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
+                        </div>
+                        <div className="p-4">
+                            <label className="btn-upload flex items-center justify-center w-full px-4 py-2.5 text-sm font-medium">
+                                {isUploading ? '⏳ Uploading...' : '+ Upload Document'}
+                                <input ref={fileInputRef} type="file" onChange={handleFileUpload} accept=".pdf,.docx,.txt,.md" className="hidden" disabled={isUploading} />
+                            </label>
+                            <p className="text-xs text-slate-600 mt-2 text-center">PDF · DOCX · TXT · MD</p>
+                        </div>
+                        <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2">
+                            {documents.length === 0 ? (
+                                <div className="text-center text-slate-600 text-xs mt-8">No documents yet</div>
+                            ) : documents.map(doc => (
+                                <div key={doc.id} className="doc-card p-3">
+                                    <div className="flex justify-between items-start gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-sm text-slate-300 truncate font-medium">{doc.filename}</p>
+                                            <p className="text-xs text-slate-500 mono">{doc.word_count} words · {doc.file_type.toUpperCase()}</p>
+                                        </div>
+                                        <button onClick={() => deleteDocument(doc.id)} className="text-slate-600 hover:text-red-400 transition-colors text-xs flex-shrink-0">✕</button>
+                                    </div>
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
 
-                    {/* Main Chat Area */}
-                    <div className="flex-1 flex flex-col">
+                    {/* Main */}
+                    <div className="flex-1 flex flex-col min-w-0">
                         {/* Header */}
-                        <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                        <div className="flex-shrink-0 bg-slate-900 border-b border-slate-800 px-6 py-0 flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <button
-                                    onClick={() => setShowDocuments(!showDocuments)}
-                                    className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                                >
-                                    {showDocuments ? '◀ Hide' : '📚 Documents'}
+                                <button onClick={() => setShowDocuments(v => !v)}
+                                    className="btn-clear px-3 py-2 text-xs my-3">
+                                    {showDocuments ? '◀ Docs' : '📚 Docs'}
                                 </button>
                                 <div>
-                                    <h1 className="text-2xl font-bold text-gray-800">Research Assistant</h1>
-                                    <p className="text-sm text-gray-500">Powered by Claude • {documents.length} documents</p>
+                                    <span className="text-slate-200 font-semibold">Research Assistant</span>
+                                    <span className="text-slate-600 text-xs ml-2 mono">claude + tavily</span>
                                 </div>
                             </div>
-                            <button
-                                onClick={clearChat}
-                                className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                            >
-                                Clear Chat
-                            </button>
-                        </div>
 
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto px-6 py-6">
-                            {messages.length === 0 ? (
-                                <div className="flex items-center justify-center h-full">
-                                    <div className="text-center">
-                                        <div className="text-6xl mb-4">🔍</div>
-                                        <h2 className="text-2xl font-semibold text-gray-700 mb-2">Start Your Research</h2>
-                                        <p className="text-gray-500 mb-4">Upload documents and ask questions!</p>
-                                        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
-                                            <button
-                                                onClick={() => setInput("Explain quantum computing in simple terms")}
-                                                className="p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-                                            >
-                                                <p className="text-sm font-medium text-gray-700">Explain a concept</p>
-                                                <p className="text-xs text-gray-500">Quantum computing basics</p>
-                                            </button>
-                                            <button
-                                                onClick={() => setShowDocuments(true)}
-                                                className="p-3 text-left bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-                                            >
-                                                <p className="text-sm font-medium text-gray-700">Upload documents</p>
-                                                <p className="text-xs text-gray-500">Build your knowledge base</p>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="max-w-3xl mx-auto space-y-6">
-                                    {messages.map((message, index) => (
-                                        <div
-                                            key={index}
-                                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                                        >
-                                            <div
-                                                className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                                                    message.role === 'user'
-                                                        ? 'bg-blue-600 text-white'
-                                                        : 'bg-white border border-gray-200 text-gray-800'
-                                                }`}
-                                            >
-                                                <div className="whitespace-pre-wrap break-words">
-                                                    {message.content}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <div ref={messagesEndRef} />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Input */}
-                        <div className="border-t border-gray-200 bg-white px-6 py-4">
-                            <div className="max-w-3xl mx-auto">
-                                <div className="flex gap-3">
-                                    <textarea
-                                        value={input}
-                                        onChange={(e) => setInput(e.target.value)}
-                                        onKeyPress={handleKeyPress}
-                                        placeholder="Ask me anything about your research..."
-                                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                                        rows="2"
-                                        disabled={isLoading}
-                                    />
-                                    <button
-                                        onClick={sendMessage}
-                                        disabled={isLoading || !input.trim()}
-                                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-                                    >
-                                        {isLoading ? '...' : 'Send'}
+                            {/* Tabs */}
+                            <div className="flex h-full items-end gap-1">
+                                {[
+                                    { id: 'chat', label: '💬 Chat', desc: 'RAG' },
+                                    { id: 'agent', label: '⚡ Agent', desc: 'Agentic' },
+                                ].map(t => (
+                                    <button key={t.id} onClick={() => setTab(t.id)}
+                                        className={`px-5 py-4 text-sm font-medium transition-all ${tab === t.id ? 'tab-active' : 'tab-inactive'}`}>
+                                        {t.label}
+                                        <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded mono ${tab === t.id ? 'bg-sky-900 text-sky-400' : 'bg-slate-800 text-slate-600'}`}>{t.desc}</span>
                                     </button>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-2">Press Enter to send, Shift+Enter for new line</p>
+                                ))}
                             </div>
+
+                            <div className="w-28" /> {/* spacer */}
+                        </div>
+
+                        {/* Tab content */}
+                        <div className="flex-1 overflow-hidden">
+                            {tab === 'chat' ? <ChatTab documents={documents} /> : <AgentTab />}
                         </div>
                     </div>
                 </div>
