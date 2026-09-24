@@ -11,5 +11,8 @@ export default defineConfig({
     proxy: {
       '/research': 'http://localhost:8000',
     }
+  },
+  build: {
+    outDir: 'dist',
   }
 })

@@ -1,0 +1,11 @@
+﻿__pycache__
+*.pyc
+*.pyo
+.env
+chroma_db/
+uploads/
+venv/
+.venv/
+*.egg-info
+.pytest_cache
+test_pipeline.py
