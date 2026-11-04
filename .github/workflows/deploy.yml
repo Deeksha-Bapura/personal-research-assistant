@@ -1,0 +1,105 @@
+name: Deploy check
+
+# Proves the app still builds and starts, on GitHub's free runners:
+#  - compose:   docker compose up, then hit the dashboard and the API through nginx
+#  - terraform: fmt/validate, then terraform apply against the runner's Docker,
+#               the same smoke test, then terraform destroy
+# Nothing is pushed or deployed anywhere, so this costs nothing.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "infra/**"
+      - "docker-compose.yml"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Placeholder env file (no real keys needed to start)
+        run: cp backend/.env.example backend/.env
+
+      - name: Build and start
+        run: docker compose up --build --detach --wait --wait-timeout 180
+
+      - name: Smoke test
+        run: |
+          set -e
+          curl -fsS http://localhost:8080/ | grep -q '<div id="root">'
+          echo "dashboard OK"
+          curl -fsS http://localhost:8080/api-health | grep -q '"ok"'
+          echo "API via nginx OK"
+          curl -fsS http://localhost:8000/health | grep -q '"ok"'
+          echo "API direct OK"
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes
+
+  terraform:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: Format check
+        run: terraform fmt -check -recursive
+
+      - name: Init and validate
+        run: |
+          terraform init -input=false
+          terraform validate
+
+      - name: Placeholder env file
+        run: cp ../backend/.env.example ../backend/.env
+
+      - name: Apply (builds images, starts containers on the runner)
+        run: terraform apply -auto-approve -input=false
+
+      - name: Smoke test
+        run: |
+          set -e
+          URL=$(terraform output -raw dashboard_url)
+          for i in $(seq 1 30); do curl -fsS "$URL/" >/dev/null && break; sleep 2; done
+          curl -fsS "$URL/" | grep -q '<div id="root">'
+          curl -fsS "$URL/api-health" | grep -q '"ok"'
+          curl -fsS "$(terraform output -raw api_health_url)" | grep -q '"ok"'
+          echo "Terraform-managed stack is up"
+
+      - name: Logs on failure
+        if: failure()
+        run: |
+          docker logs research-assistant-backend || true
+          docker logs research-assistant-frontend || true
+
+      - name: Destroy
+        if: always()
+        run: terraform destroy -auto-approve -input=false

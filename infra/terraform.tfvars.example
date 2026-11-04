@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars (git-ignored) and adjust if needed.
+
+# Windows + Docker Desktop: uncomment this line.
+# docker_host = "npipe:////.//pipe/docker_engine"
+
+# frontend_port = 8080
+# backend_port  = 8000

@@ -1,0 +1,36 @@
+# Rendered by the nginx image at startup: ${API_UPSTREAM} comes from the environment.
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Multi-agent API. The pipeline streams server-sent events and can run for
+    # a few minutes, so buffering is off and timeouts are long.
+    location /research/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Connection "";
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    location = /api-health {
+        proxy_pass ${API_UPSTREAM}/health;
+    }
+
+    # Single-page app: unknown paths fall back to index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}

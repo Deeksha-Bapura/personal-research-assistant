@@ -1,0 +1,9 @@
+# Document chat + tool-using agent (server.py, rag.py, agent.py).
+# Not part of the Docker image; install locally to run `python server.py`.
+-r eval/requirements.txt
+flask>=3.0
+flask-cors>=4.0
+PyPDF2>=3.0
+python-docx>=1.1
+anthropic>=0.40
+tavily-python>=0.5

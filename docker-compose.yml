@@ -1,0 +1,33 @@
+# Runs the research dashboard + multi-agent API locally.
+#
+#   1. cp backend/.env.example backend/.env   (and fill in your keys)
+#   2. docker compose up --build
+#   3. open http://localhost:8080
+#
+# Stop with Ctrl+C, or `docker compose down`.
+
+name: research-assistant
+
+services:
+  backend:
+    build:
+      context: ./backend
+    image: research-assistant-backend:latest
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"          # API directly (optional): http://localhost:8000/health
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    image: research-assistant-frontend:latest
+    environment:
+      API_UPSTREAM: http://backend:8000
+    ports:
+      - "8080:80"            # dashboard: http://localhost:8080
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
