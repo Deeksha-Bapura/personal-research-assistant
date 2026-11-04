@@ -1,11 +1,17 @@
-﻿__pycache__
+# Keep secrets, local data and dev-only files out of the image
+.env
+.env.*
+!.env.example
+__pycache__
 *.pyc
 *.pyo
-.env
-chroma_db/
-uploads/
-venv/
-.venv/
 *.egg-info
 .pytest_cache
+venv/
+.venv/
+chroma_db/
+uploads/
+eval/
+eval-*.json
 test_pipeline.py
+test_agent.py

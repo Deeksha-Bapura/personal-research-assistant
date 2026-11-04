@@ -103,7 +103,7 @@ flowchart LR
 | Web data | Firecrawl (scraping), Tavily (search) |
 | Documents | PyPDF2, python-docx |
 | Evaluation and CI | Custom eval harness, GitHub Actions |
-| Packaging | Dockerfile for the FastAPI service |
+| Packaging and infrastructure | Docker (FastAPI image + nginx-served frontend), Docker Compose, Terraform (Docker provider) |
 
 ---
 
@@ -125,8 +125,17 @@ personal-research-assistant/
 │   ├── eval/                  # Test set, corpus, configs, results, run_eval.py
 │   ├── test_pipeline.py       # Runs the four agents end to end from the CLI
 │   ├── test_agent.py          # Smoke test for /api/agent
-│   └── Dockerfile             # Runs api.py with uvicorn on port 8000
-└── .github/workflows/eval.yml # RAG eval on every PR
+│   ├── requirements.txt       # API dependencies (what the Docker image installs)
+│   ├── requirements-server.txt  # Extra dependencies for server.py (document chat + agent)
+│   ├── .env.example           # Template for backend/.env
+│   └── Dockerfile             # API image: uvicorn on port 8000, non-root, health check
+├── frontend/Dockerfile        # Builds the React app, serves it with nginx
+├── frontend/nginx.conf.template  # Serves the app, proxies /research to the API (SSE-safe)
+├── docker-compose.yml         # Runs dashboard + API locally
+├── infra/                     # Terraform: same stack as Docker containers on your machine
+└── .github/workflows/
+    ├── eval.yml               # RAG eval on every PR
+    └── deploy.yml             # Builds and starts the stack with Compose and Terraform, then smoke-tests it
 ```
 
 ---
@@ -145,23 +154,38 @@ personal-research-assistant/
 | `ANTHROPIC_API_KEY` | Document chat, tool-using agent, full eval |
 | `TAVILY_API_KEY` | Tool-using agent (web search) |
 
-Put them in `backend/.env`. This file is ignored by Git.
+Copy `backend/.env.example` to `backend/.env` and fill in your keys. This file is ignored by Git and never copied into the Docker image.
 
-```env
-OPENROUTER_API_KEY=...
-FIRECRAWL_API_KEY=...
-PINECONE_API_KEY=...
-PINECONE_INDEX_NAME=research-index
-ANTHROPIC_API_KEY=...
-TAVILY_API_KEY=...
+### 1. Multi-agent research dashboard with Docker (easiest)
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/), which is free for personal use.
+
+```bash
+docker compose up --build
 ```
 
-### 1. Multi-agent research dashboard
+Open **http://localhost:8080**, enter a topic and click **Research**. The API is also available at http://localhost:8000/health. Stop with `Ctrl+C` or `docker compose down`.
+
+### 2. Same stack with Terraform (infrastructure as code, still free and local)
+
+`infra/` describes the same two containers, their network and ports as Terraform, using the [Docker provider](https://registry.terraform.io/providers/kreuzwerker/docker/latest). Terraform builds the images, starts the containers, and rebuilds only what changed. It needs [Terraform](https://developer.hashicorp.com/terraform/install) and Docker.
+
+```bash
+cd infra
+cp terraform.tfvars.example terraform.tfvars   # on Windows, uncomment docker_host in it
+terraform init
+terraform apply        # prints dashboard_url when it's up
+terraform destroy      # stop and remove everything
+```
+
+Use either Compose or Terraform, not both at once: they use the same ports.
+
+### 3. Multi-agent dashboard without Docker (for development)
 
 ```bash
 cd backend
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt openai
+pip install -r requirements.txt
 uvicorn api:app --reload --port 8000
 ```
 
@@ -175,11 +199,11 @@ npm run dev
 
 Open the URL Vite prints (usually http://localhost:5173), enter a topic and click **Research**.
 
-### 2. Document chat and tool-using agent
+### 4. Document chat and tool-using agent
 
 ```bash
 cd backend
-pip install -r eval/requirements.txt flask flask-cors PyPDF2 python-docx anthropic tavily-python
+pip install -r requirements-server.txt
 python server.py          # http://localhost:5000
 ```
 
@@ -200,7 +224,7 @@ curl -X POST http://localhost:5000/api/agent \
 
 To change RAG settings, set `RAG_CONFIG=eval/configs/<name>.json` or individual variables such as `RAG_RERANK=false` or `RAG_CHUNK_SIZE=800`.
 
-### 3. Run the evaluation
+### 5. Run the evaluation
 
 ```bash
 cd backend
@@ -233,7 +257,8 @@ python eval/run_eval.py --sweep eval/configs/*.json      # compare configuration
 - The React dashboard covers the multi-agent pipeline only. Document chat and the tool-using agent are API-only for now; a UI for upload and chat is next.
 - The list of uploaded documents and the agent's session memory are held in memory and reset when the Flask server restarts. The embeddings in ChromaDB persist.
 - Reranking adds about 1.5 s per question on CPU. Next steps are a smaller or GPU-hosted reranker, or reranking fewer candidates.
-- Deployment is scaffolded but not finished: `docker-compose.yml`, `infra/` (Terraform) and `.github/workflows/deploy.yml` are placeholders.
+- The stack runs locally with Docker Compose or Terraform. It isn't hosted publicly yet. Pointing the Terraform at a cloud container service (for example Cloud Run, which has a free tier) is the next step.
+- Document chat (`server.py`) isn't containerized yet, because its models and ChromaDB data need more memory and persistent storage.
 
 ## License
 
