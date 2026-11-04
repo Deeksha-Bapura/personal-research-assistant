@@ -1,0 +1,7 @@
+# Dependencies for backend/rag.py + backend/eval/run_eval.py
+# (CI installs CPU-only torch first: pip install torch --index-url https://download.pytorch.org/whl/cpu)
+sentence-transformers>=3.0,<7
+chromadb>=0.5,<2
+numpy
+requests
+python-dotenv

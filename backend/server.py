@@ -9,8 +9,7 @@ import PyPDF2
 from docx import Document
 from datetime import datetime
 import chromadb
-from sentence_transformers import SentenceTransformer
-from chromadb.config import Settings
+from rag import RAGConfig, Retriever, build_system_prompt, stream_claude
 load_dotenv()
 
 app = Flask(__name__)
@@ -27,18 +26,13 @@ UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'md'}
 MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
 
-# Chunking parameters
-CHUNK_SIZE = 1000  # characters
-CHUNK_OVERLAP = 200  # characters overlap between chunks
+# Chunking / retrieval settings live in rag.py (RAGConfig) so the eval suite
+# measures exactly what this server runs. Override with RAG_* env vars.
+RAG_CONFIG = RAGConfig.from_env()
 
 # Create necessary directories
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs('chroma_db', exist_ok=True)
-
-# Initialize embedding model (this loads once on startup)
-print("Loading embedding model...")
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-print("Embedding model loaded!")
 
 # Initialize Chroma client
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
@@ -47,33 +41,17 @@ collection = chroma_client.get_or_create_collection(
     metadata={"hnsw:space": "cosine"}
 )
 
+# Embedding model (and reranker, if enabled) load once on startup
+print(f"Loading embedding model {RAG_CONFIG.embedding_model}...")
+retriever = Retriever(RAG_CONFIG, collection=collection)
+print("Embedding model loaded!")
+
 # In-memory storage for documents
 documents_db = []
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
-    """Split text into overlapping chunks"""
-    chunks = []
-    start = 0
-    text_length = len(text)
-    
-    while start < text_length:
-        end = start + chunk_size
-        chunk = text[start:end]
-        
-        if chunk.strip():  # Only add non-empty chunks
-            chunks.append({
-                'text': chunk,
-                'start_pos': start,
-                'end_pos': min(end, text_length)
-            })
-        
-        start += chunk_size - overlap
-    
-    return chunks
 
 def extract_text_from_pdf(file_path):
     """Extract text from PDF file"""
@@ -151,38 +129,13 @@ def upload_document():
             os.remove(file_path)
             return jsonify({'error': 'Failed to extract text from document'}), 500
         
-        # Create chunks
-        chunks = chunk_text(text_content)
+        # Chunk, embed and store in Chroma (see rag.Retriever)
+        doc_id = len(documents_db) + 1
+        chunks = retriever.add_document(doc_id, filename, text_content)
         
         if not chunks:
             os.remove(file_path)
             return jsonify({'error': 'Document is empty or could not be chunked'}), 400
-        
-        # Generate embeddings and store in Chroma
-        doc_id = len(documents_db) + 1
-        
-        for i, chunk_data in enumerate(chunks):
-            text = chunk_data['text']
-            
-            # Generate embedding
-            embedding = embedding_model.encode(text).tolist()
-            
-            # Create unique ID for this chunk
-            chunk_id = f"doc_{doc_id}_chunk_{i}"
-            
-            # Add to Chroma with metadata
-            collection.add(
-                ids=[chunk_id],
-                embeddings=[embedding],
-                documents=[text],
-                metadatas=[{
-                    'doc_id': doc_id,
-                    'filename': filename,
-                    'chunk_index': i,
-                    'start_pos': chunk_data['start_pos'],
-                    'end_pos': chunk_data['end_pos']
-                }]
-            )
         
         # Calculate stats
         word_count = len(text_content.split())
@@ -275,24 +228,7 @@ def search_documents():
         if not query:
             return jsonify({'error': 'Query is required'}), 400
         
-        # Generate embedding for query
-        query_embedding = embedding_model.encode(query).tolist()
-        
-        # Search in Chroma
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k
-        )
-        
-        # Format results
-        search_results = []
-        if results['documents'] and len(results['documents'][0]) > 0:
-            for i in range(len(results['documents'][0])):
-                search_results.append({
-                    'text': results['documents'][0][i],
-                    'metadata': results['metadatas'][0][i],
-                    'distance': results['distances'][0][i] if 'distances' in results else None
-                })
+        search_results = retriever.search(query, top_k=top_k)
         
         return jsonify({
             'query': query,
@@ -320,69 +256,17 @@ def chat():
         # Get the last user message for context retrieval
         last_user_message = next((m for m in reversed(messages) if m['role'] == 'user'), None)
         
-        # Build system prompt
-        system_prompt = 'You are a helpful research assistant. Help users with their research questions, summarize information, explain concepts clearly, and assist with learning. Be concise but thorough.'
-        
-        # If RAG is enabled and we have documents, retrieve relevant context
+        # Retrieve relevant chunks (if RAG is on and documents exist) and
+        # build the system prompt - same code path the eval suite scores
+        hits = []
         if use_rag and last_user_message and len(documents_db) > 0:
-            query = last_user_message['content']
-            
-            # Generate embedding for query
-            query_embedding = embedding_model.encode(query).tolist()
-            
-            # Search for relevant chunks
-            results = collection.query(
-                query_embeddings=[query_embedding],
-                n_results=3
-            )
-            
-            # Build context from results
-            if results['documents'] and len(results['documents'][0]) > 0:
-                context_parts = []
-                for i, doc_text in enumerate(results['documents'][0]):
-                    metadata = results['metadatas'][0][i]
-                    context_parts.append(f"[Source: {metadata['filename']}]\n{doc_text}")
-                
-                context = "\n\n".join(context_parts)
-                
-                # Update system prompt with context
-                system_prompt = f"""You are a helpful research assistant. You have access to the user's uploaded documents.
-
-Use the following context from the user's documents to answer their question. If the context is relevant, cite the source filename. If the context doesn't contain relevant information, you can use your general knowledge but mention that it's not from their documents.
-
-CONTEXT FROM DOCUMENTS:
-{context}
-
-Answer the user's question based on this context."""
-
-        # Prepare request to Anthropic API
-        headers = {
-            'Content-Type': 'application/json',
-            'x-api-key': ANTHROPIC_API_KEY,
-            'anthropic-version': '2023-06-01'
-        }
-        
-        payload = {
-            'model': 'claude-sonnet-4-20250514',
-            'max_tokens': 4096,
-            'system': system_prompt,
-            'messages': messages,
-            'stream': True
-        }
+            hits = retriever.search(last_user_message['content'])
+        system_prompt = build_system_prompt(hits)
 
         # Stream response from Anthropic
         def generate():
-            with requests.post(ANTHROPIC_API_URL, headers=headers, json=payload, stream=True) as response:
-                if response.status_code != 200:
-                    error_data = response.json()
-                    yield f"data: {json.dumps({'error': error_data})}\n\n"
-                    return
-                
-                for line in response.iter_lines():
-                    if line:
-                        decoded_line = line.decode('utf-8')
-                        if decoded_line.startswith('data: '):
-                            yield f"{decoded_line}\n\n"
+            for line in stream_claude(system_prompt, messages, RAG_CONFIG, ANTHROPIC_API_KEY):
+                yield f"{line}\n\n"
         
         return Response(generate(), mimetype='text/event-stream')
     
@@ -398,7 +282,8 @@ def health():
         'api_key_configured': bool(ANTHROPIC_API_KEY),
         'documents_count': len(documents_db),
         'embeddings_count': collection.count(),
-        'embedding_model': 'all-MiniLM-L6-v2'
+        'embedding_model': RAG_CONFIG.embedding_model,
+        'rag_config': RAG_CONFIG.to_dict()
     })
 
 if __name__ == '__main__':
@@ -410,7 +295,7 @@ if __name__ == '__main__':
     
     print(f"✓ Upload folder: {os.path.abspath(UPLOAD_FOLDER)}")
     print(f"✓ Chroma DB: {os.path.abspath('chroma_db')}")
-    print(f"✓ Embedding model: all-MiniLM-L6-v2")
+    print(f"✓ RAG config: {RAG_CONFIG.to_dict()}")
     print(f"✓ Documents in DB: {len(documents_db)}")
     print(f"✓ Vector embeddings: {collection.count()}")
     print("\nStarting server on http://localhost:5000")

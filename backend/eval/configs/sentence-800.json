@@ -1,0 +1,1 @@
+{"name": "sentence-800", "chunker": "sentence", "chunk_size": 800, "chunk_overlap": 150, "top_k": 3, "rerank": false}
