@@ -37,12 +37,12 @@ DEFAULT_SYSTEM_PROMPT = (
 
 @dataclass
 class RAGConfig:
-    name: str = "baseline"
+    name: str = "rerank"
     chunker: str = "fixed"            # "fixed" (character windows) or "sentence"
     chunk_size: int = 1000            # characters
     chunk_overlap: int = 200          # characters
     top_k: int = 3                    # chunks passed to Claude
-    rerank: bool = False              # cross-encoder rerank of vector hits
+    rerank: bool = True               # cross-encoder rerank of vector hits
     rerank_candidates: int = 20       # vector hits fed to the reranker
     rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     embedding_model: str = "all-MiniLM-L6-v2"

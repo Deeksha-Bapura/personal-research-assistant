@@ -92,12 +92,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
+        if: env.ANTHROPIC_API_KEY != ''
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: backend/eval/requirements.txt
 
       - name: Cache Hugging Face models
+        if: env.ANTHROPIC_API_KEY != ''
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
