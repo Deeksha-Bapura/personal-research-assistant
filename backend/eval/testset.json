@@ -1,0 +1,383 @@
+{
+  "version": 1,
+  "description": "Stage-1 RAG chat test set. Each question has one expected document, a verbatim evidence passage from that document (used to score retrieval), and a key fact the answer must contain (any alias counts).",
+  "corpus_dir": "corpus",
+  "questions": [
+    {
+      "id": "pep8-01",
+      "question": "What is the maximum line length the Python style guide recommends for code?",
+      "expected_document": "pep-0008.txt",
+      "evidence": "Limit all lines to a maximum of 79 characters.",
+      "key_fact": "79",
+      "aliases": ["seventy-nine"]
+    },
+    {
+      "id": "pep8-02",
+      "question": "How long should lines be for docstrings and comments under the style guide?",
+      "expected_document": "pep-0008.txt",
+      "evidence": "(docstrings or comments), the line length should be limited to 72 characters.",
+      "key_fact": "72",
+      "aliases": ["seventy-two"]
+    },
+    {
+      "id": "pep8-03",
+      "question": "How many spaces should be used per indentation level?",
+      "expected_document": "pep-0008.txt",
+      "evidence": "Use 4 spaces per indentation level.",
+      "key_fact": "4 spaces",
+      "aliases": ["four spaces"]
+    },
+    {
+      "id": "pep8-04",
+      "question": "For new code, should a line break come before or after a binary operator, and whose style is that?",
+      "expected_document": "pep-0008.txt",
+      "evidence": "In Python code, it is permissible to break before or after a binary operator, as long as the convention is consistent locally. For new code Knuth's style is suggested.",
+      "key_fact": "Knuth",
+      "aliases": []
+    },
+    {
+      "id": "pep8-05",
+      "question": "How many blank lines should surround top-level function and class definitions?",
+      "expected_document": "pep-0008.txt",
+      "evidence": "Surround top-level function and class definitions with two blank lines.",
+      "key_fact": "two blank lines",
+      "aliases": ["2 blank lines"]
+    },
+    {
+      "id": "pep8-06",
+      "question": "How should comparisons to singletons like None be written?",
+      "expected_document": "pep-0008.txt",
+      "evidence": "Comparisons to singletons like None should always be done with ``is`` or ``is not``, never the equality operators.",
+      "key_fact": "is not",
+      "aliases": []
+    },
+    {
+      "id": "pep8-07",
+      "question": "How are module-level constants supposed to be named?",
+      "expected_document": "pep-0008.txt",
+      "evidence": "Constants are usually defined on a module level and written in all capital letters with underscores separating words.",
+      "key_fact": "capital letters",
+      "aliases": ["uppercase", "upper case", "upper-case", "all caps", "MAX_OVERFLOW", "UPPER_CASE"]
+    },
+    {
+      "id": "pep8-08",
+      "question": "What source file encoding should code in the core Python distribution use?",
+      "expected_document": "pep-0008.txt",
+      "evidence": "Code in the core Python distribution should always use UTF-8, and should not have an encoding declaration.",
+      "key_fact": "UTF-8",
+      "aliases": ["utf8"]
+    },
+    {
+      "id": "pep8-09",
+      "question": "When is it acceptable to use a bare except clause?",
+      "expected_document": "pep-0008.txt",
+      "evidence": "If the exception handler will be printing out or logging the traceback; at least the user will be aware that an error has occurred.",
+      "key_fact": "traceback",
+      "aliases": []
+    },
+    {
+      "id": "pep257-01",
+      "question": "What kind of quotes should always be used around docstrings?",
+      "expected_document": "pep-0257.txt",
+      "evidence": "For consistency, always use ``\"\"\"triple double quotes\"\"\"`` around docstrings.",
+      "key_fact": "triple double quotes",
+      "aliases": ["\"\"\""]
+    },
+    {
+      "id": "pep257-02",
+      "question": "What quoting should a docstring use if it contains backslashes?",
+      "expected_document": "pep-0257.txt",
+      "evidence": "Use ``r\"\"\"raw triple double quotes\"\"\"`` if you use any backslashes in your docstrings.",
+      "key_fact": "raw",
+      "aliases": ["r\"\"\""]
+    },
+    {
+      "id": "pep257-03",
+      "question": "Should a one-line docstring describe the function (\"Returns the pathname\") or phrase its effect as a command?",
+      "expected_document": "pep-0257.txt",
+      "evidence": "It prescribes the function or method's effect as a command (\"Do this\", \"Return that\"), not as a description; e.g. don't write \"Returns the pathname ...\".",
+      "key_fact": "command",
+      "aliases": ["imperative"]
+    },
+    {
+      "id": "pep257-04",
+      "question": "What separates the summary line of a multi-line docstring from the more elaborate description?",
+      "expected_document": "pep-0257.txt",
+      "evidence": "Multi-line docstrings consist of a summary line just like a one-line docstring, followed by a blank line, followed by a more elaborate description.",
+      "key_fact": "blank line",
+      "aliases": ["empty line"]
+    },
+    {
+      "id": "pep343-01",
+      "question": "In a with statement, what happens to an exception raised in the block if __exit__() returns a true value?",
+      "expected_document": "pep-0343.txt",
+      "evidence": "IMPORTANT: if ``mgr.__exit__()`` returns a \"true\" value, the exception is \"swallowed\".",
+      "key_fact": "swallowed",
+      "aliases": ["suppressed", "suppresses", "suppress", "swallow"]
+    },
+    {
+      "id": "pep343-02",
+      "question": "What arguments is __exit__() called with when the with block finishes without an exception?",
+      "expected_document": "pep-0343.txt",
+      "evidence": "``mgr.__exit__()`` is called with three ``None`` arguments.",
+      "key_fact": "None",
+      "aliases": []
+    },
+    {
+      "id": "pep343-03",
+      "question": "Which decorator turns a generator function into a context manager factory?",
+      "expected_document": "pep-0343.txt",
+      "evidence": "the decorator to convert a generator function into a context manager factory is ``contextlib.contextmanager``.",
+      "key_fact": "contextmanager",
+      "aliases": []
+    },
+    {
+      "id": "pep343-04",
+      "question": "Why does the with statement raise TypeError rather than AttributeError when __enter__ or __exit__ is missing?",
+      "expected_document": "pep-0343.txt",
+      "evidence": "The fact that the abstract object C API raises ``TypeError`` rather than ``AttributeError`` is an accident of history, rather than a deliberate design decision",
+      "key_fact": "accident of history",
+      "aliases": ["historical accident", "accident"]
+    },
+    {
+      "id": "pep484-01",
+      "question": "What is the shorthand for writing Union[T1, None] in a type hint?",
+      "expected_document": "pep-0484.txt",
+      "evidence": "As a shorthand for ``Union[T1, None]`` you can write ``Optional[T1]``;",
+      "key_fact": "Optional",
+      "aliases": []
+    },
+    {
+      "id": "pep484-02",
+      "question": "How do you write a type hint that refers to a class that has not been defined yet?",
+      "expected_document": "pep-0484.txt",
+      "evidence": "When a type hint contains names that have not been defined yet, that definition may be expressed as a string literal, to be resolved later.",
+      "key_fact": "string",
+      "aliases": ["quotes", "quoted"]
+    },
+    {
+      "id": "pep484-03",
+      "question": "What file extension do type stub files use?",
+      "expected_document": "pep-0484.txt",
+      "evidence": "While stub files are syntactically valid Python modules, they use the ``.pyi`` extension to make it possible to maintain stub files in the same directory as the corresponding real module.",
+      "key_fact": ".pyi",
+      "aliases": []
+    },
+    {
+      "id": "pep484-04",
+      "question": "What happens if a '# type: ignore' comment is placed on a line by itself at the top of a file?",
+      "expected_document": "pep-0484.txt",
+      "evidence": "A ``# type: ignore`` comment on a line by itself at the top of a file, before any docstrings, imports, or other executable code, silences all errors in the file.",
+      "key_fact": "all errors",
+      "aliases": ["every error", "entire file", "whole file", "all type errors", "all type-checking errors"]
+    },
+    {
+      "id": "pep484-05",
+      "question": "What naming convention is recommended for type variables declared with covariant=True?",
+      "expected_document": "pep-0484.txt",
+      "evidence": "By convention, it is recommended to use names ending in ``_co`` for type variables defined with ``covariant=True``",
+      "key_fact": "_co",
+      "aliases": []
+    },
+    {
+      "id": "pep484-06",
+      "question": "How should a type checker treat a function that has no annotations at all?",
+      "expected_document": "pep-0484.txt",
+      "evidence": "Any function without annotations should be treated as having the most general type possible, or ignored, by any type checker.",
+      "key_fact": "most general type",
+      "aliases": ["ignored", "Any"]
+    },
+    {
+      "id": "pep484-07",
+      "question": "Which special type annotates a function that never returns normally, such as one that always raises?",
+      "expected_document": "pep-0484.txt",
+      "evidence": "The ``typing`` module provides a special type ``NoReturn`` to annotate functions that never return normally.",
+      "key_fact": "NoReturn",
+      "aliases": []
+    },
+    {
+      "id": "pep492-01",
+      "question": "What happens if you use await outside of an async def function?",
+      "expected_document": "pep-0492.txt",
+      "evidence": "It is a ``SyntaxError`` to use ``await`` outside of an ``async def`` function",
+      "key_fact": "SyntaxError",
+      "aliases": ["syntax error"]
+    },
+    {
+      "id": "pep492-02",
+      "question": "What is raised when a native coroutine is garbage collected without ever being awaited?",
+      "expected_document": "pep-0492.txt",
+      "evidence": "When a *native coroutine* is garbage collected, a ``RuntimeWarning`` is raised if it was never awaited on",
+      "key_fact": "RuntimeWarning",
+      "aliases": []
+    },
+    {
+      "id": "pep492-03",
+      "question": "Which two magic methods does an asynchronous context manager need for async with?",
+      "expected_document": "pep-0492.txt",
+      "evidence": "Two new magic methods are added: ``__aenter__`` and ``__aexit__``. Both must return an *awaitable*.",
+      "key_fact": "__aenter__",
+      "aliases": []
+    },
+    {
+      "id": "pep492-04",
+      "question": "What exception must __anext__ raise to end asynchronous iteration?",
+      "expected_document": "pep-0492.txt",
+      "evidence": "To stop iteration ``__anext__`` must raise a ``StopAsyncIteration`` exception.",
+      "key_fact": "StopAsyncIteration",
+      "aliases": []
+    },
+    {
+      "id": "pep492-05",
+      "question": "What does the async/await proposal call objects that have an __await__ method?",
+      "expected_document": "pep-0492.txt",
+      "evidence": "Objects with ``__await__`` method are called *Future-like* objects in the rest of this PEP.",
+      "key_fact": "Future-like",
+      "aliases": ["future like"]
+    },
+    {
+      "id": "pep498-01",
+      "question": "Which type conversions can follow an expression inside an f-string?",
+      "expected_document": "pep-0498.txt",
+      "evidence": "The allowed conversions are ``'!s'``, ``'!r'``, or ``'!a'``.",
+      "key_fact": "!a",
+      "aliases": ["ascii()"]
+    },
+    {
+      "id": "pep498-02",
+      "question": "How do you put a literal curly brace in the output of an f-string?",
+      "expected_document": "pep-0498.txt",
+      "evidence": "Note that the correct way to have a literal brace appear in the resulting string value is to double the brace",
+      "key_fact": "double",
+      "aliases": ["{{", "two braces"]
+    },
+    {
+      "id": "pep498-03",
+      "question": "Why can't a lambda appear unparenthesized inside an f-string expression?",
+      "expected_document": "pep-0498.txt",
+      "evidence": "The colon is interpreted as the start of the format specifier, which means the start of the lambda expression is seen and is syntactically invalid.",
+      "key_fact": "format specifier",
+      "aliases": ["format spec"]
+    },
+    {
+      "id": "pep498-04",
+      "question": "When are adjacent f-strings concatenated, compared with adjacent regular strings?",
+      "expected_document": "pep-0498.txt",
+      "evidence": "Regular strings are concatenated at compile time, and f-strings are concatenated at run time.",
+      "key_fact": "run time",
+      "aliases": ["runtime", "run-time"]
+    },
+    {
+      "id": "pep498-05",
+      "question": "Which protocol is used to format the value of each f-string expression?",
+      "expected_document": "pep-0498.txt",
+      "evidence": "The expression is then formatted using the ``__format__`` protocol, using the format specifier as an argument.",
+      "key_fact": "__format__",
+      "aliases": ["format()"]
+    },
+    {
+      "id": "pep572-01",
+      "question": "What informal nickname did the := operator get during discussion of assignment expressions?",
+      "expected_document": "pep-0572.txt",
+      "evidence": "During discussion of this PEP, the operator became informally known as \"the walrus operator\".",
+      "key_fact": "walrus",
+      "aliases": []
+    },
+    {
+      "id": "pep572-02",
+      "question": "Where does an assignment expression inside a list comprehension bind its target?",
+      "expected_document": "pep-0572.txt",
+      "evidence": "binds the target in the containing scope, honoring a ``nonlocal`` or ``global`` declaration for the target in that scope, if one exists.",
+      "key_fact": "containing scope",
+      "aliases": ["enclosing scope", "outer scope", "surrounding scope"]
+    },
+    {
+      "id": "pep572-03",
+      "question": "Is 'y := f(x)' valid as a standalone statement without parentheses?",
+      "expected_document": "pep-0572.txt",
+      "evidence": "Unparenthesized assignment expressions are prohibited at the top level of an expression statement.",
+      "key_fact": "prohibited",
+      "aliases": ["invalid", "not valid", "not allowed", "isn't valid", "is not valid", "syntaxerror", "not permitted"]
+    },
+    {
+      "id": "pep572-04",
+      "question": "Do assignment expressions support augmented assignment like +=, and what is the equivalent?",
+      "expected_document": "pep-0572.txt",
+      "evidence": "Augmented assignment is not supported:: total += tax # Equivalent: (total := total + tax)",
+      "key_fact": "total := total + tax",
+      "aliases": ["not supported", "does not support", "doesn't support", "x := x +"]
+    },
+    {
+      "id": "pep3333-01",
+      "question": "How many positional arguments must a WSGI application object accept, and what are they usually called?",
+      "expected_document": "pep-3333.txt",
+      "evidence": "The application object must accept two positional arguments. For the sake of illustration, we have named them ``environ`` and ``start_response``",
+      "key_fact": "start_response",
+      "aliases": []
+    },
+    {
+      "id": "pep3333-02",
+      "question": "What are WSGI components called that act as a server to an application and as an application to a server?",
+      "expected_document": "pep-3333.txt",
+      "evidence": "Note that a single object may play the role of a server with respect to some application(s), while also acting as an application with respect to some server(s). Such \"middleware\" components",
+      "key_fact": "middleware",
+      "aliases": []
+    },
+    {
+      "id": "pep3333-03",
+      "question": "Through which encoding must the content of WSGI native strings be translatable to bytes?",
+      "expected_document": "pep-3333.txt",
+      "evidence": "the *content* of native strings must still be translatable to bytes via the Latin-1 encoding!",
+      "key_fact": "Latin-1",
+      "aliases": ["latin1", "ISO-8859-1", "latin 1"]
+    },
+    {
+      "id": "pep3333-04",
+      "question": "If the iterable returned by a WSGI application has a close() method, what must the server do?",
+      "expected_document": "pep-3333.txt",
+      "evidence": "If the iterable returned by the application has a ``close()`` method, the server or gateway **must** call that method upon completion of the current request",
+      "key_fact": "call",
+      "aliases": []
+    },
+    {
+      "id": "pep3333-05",
+      "question": "Why was the WSGI spec reissued as a new PEP instead of keeping PEP 333?",
+      "expected_document": "pep-3333.txt",
+      "evidence": "This is an updated version of :pep:`333`, modified slightly to improve usability under Python 3, and to incorporate several long-standing de facto amendments to the WSGI protocol.",
+      "key_fact": "Python 3",
+      "aliases": ["Python3", "Py3"]
+    },
+    {
+      "id": "pep636-01",
+      "question": "Which pattern always matches but does not bind any variables?",
+      "expected_document": "pep-0636.txt",
+      "evidence": "This special pattern which is written ``_`` (and called wildcard) always matches but it doesn't bind any variables.",
+      "key_fact": "wildcard",
+      "aliases": ["`_`"]
+    },
+    {
+      "id": "pep636-02",
+      "question": "What restriction applies to the variables bound by the alternatives of an or pattern?",
+      "expected_document": "pep-0636.txt",
+      "evidence": "An important restriction when writing or patterns is that all alternatives should bind the same variables.",
+      "key_fact": "same variables",
+      "aliases": ["same set of variables", "same names"]
+    },
+    {
+      "id": "pep636-03",
+      "question": "In what order are the alternatives in an or pattern tried?",
+      "expected_document": "pep-0636.txt",
+      "evidence": "Patterns are tried from left to right; this may be relevant to know what is bound if more than one alternative matches.",
+      "key_fact": "left to right",
+      "aliases": ["left-to-right"]
+    },
+    {
+      "id": "pep636-04",
+      "question": "When is a guard on a case clause evaluated?",
+      "expected_document": "pep-0636.txt",
+      "evidence": "The guard is not part of the pattern, it's part of the case. It's only checked if the pattern matches, and after all the pattern variables have been bound",
+      "key_fact": "pattern matches",
+      "aliases": ["after the pattern", "only if the pattern", "only when the pattern", "after all the pattern variables", "after the variables"]
+    }
+  ]
+}

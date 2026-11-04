@@ -1,0 +1,1252 @@
+{
+  "timestamp": "2026-11-04T06:12:43+00:00",
+  "git_sha": "bdf6ceb7",
+  "mode": "retrieval",
+  "grader": "none",
+  "config": {
+    "name": "baseline",
+    "chunker": "fixed",
+    "chunk_size": 1000,
+    "chunk_overlap": 200,
+    "top_k": 3,
+    "rerank": false,
+    "rerank_candidates": 20,
+    "rerank_model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "embedding_model": "all-MiniLM-L6-v2",
+    "llm_model": "claude-sonnet-4-20250514",
+    "max_tokens": 4096
+  },
+  "metrics": {
+    "n_questions": 47,
+    "retrieval_accuracy": 63.8,
+    "doc_hit_rate": 97.9,
+    "mrr": 50.0,
+    "n_chunks": 522,
+    "index_build_s": 220.82,
+    "avg_retrieval_ms": 19.1
+  },
+  "rows": [
+    {
+      "id": "pep8-01",
+      "question": "What is the maximum line length the Python style guide recommends for code?",
+      "expected_document": "pep-0008.txt",
+      "retrieval_s": 0.035050899954512715,
+      "retrieved": [
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 9,
+          "distance": 0.345
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 8,
+          "distance": 0.3823
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 2,
+          "distance": 0.4088
+        }
+      ],
+      "passage_rank": 2,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep8-02",
+      "question": "How long should lines be for docstrings and comments under the style guide?",
+      "expected_document": "pep-0008.txt",
+      "retrieval_s": 0.015959199983626604,
+      "retrieved": [
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 9,
+          "distance": 0.4165
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 8,
+          "distance": 0.4197
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 29,
+          "distance": 0.5706
+        }
+      ],
+      "passage_rank": 2,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep8-03",
+      "question": "How many spaces should be used per indentation level?",
+      "expected_document": "pep-0008.txt",
+      "retrieval_s": 0.06377430004067719,
+      "retrieved": [
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 8,
+          "distance": 0.5376
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 4,
+          "distance": 0.5664
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 5,
+          "distance": 0.5746
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep8-04",
+      "question": "For new code, should a line break come before or after a binary operator, and whose style is that?",
+      "expected_document": "pep-0008.txt",
+      "retrieval_s": 0.032191900070756674,
+      "retrieved": [
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 12,
+          "distance": 0.3922
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 11,
+          "distance": 0.4489
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 22,
+          "distance": 0.4786
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep8-05",
+      "question": "How many blank lines should surround top-level function and class definitions?",
+      "expected_document": "pep-0008.txt",
+      "retrieval_s": 0.022756600053980947,
+      "retrieved": [
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 5,
+          "distance": 0.5354
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 12,
+          "distance": 0.542
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 30,
+          "distance": 0.6188
+        }
+      ],
+      "passage_rank": 2,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep8-06",
+      "question": "How should comparisons to singletons like None be written?",
+      "expected_document": "pep-0008.txt",
+      "retrieval_s": 0.02256940002553165,
+      "retrieved": [
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 48,
+          "distance": 0.5293
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 42,
+          "distance": 0.5661
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 43,
+          "distance": 0.6295
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep8-07",
+      "question": "How are module-level constants supposed to be named?",
+      "expected_document": "pep-0008.txt",
+      "retrieval_s": 0.013386899838224053,
+      "retrieved": [
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 36,
+          "distance": 0.3962
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 40,
+          "distance": 0.4396
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 17,
+          "distance": 0.489
+        }
+      ],
+      "passage_rank": 2,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep8-08",
+      "question": "What source file encoding should code in the core Python distribution use?",
+      "expected_document": "pep-0008.txt",
+      "retrieval_s": 0.02162979985587299,
+      "retrieved": [
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 13,
+          "distance": 0.4931
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 62,
+          "distance": 0.4936
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 10,
+          "distance": 0.5001
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep8-09",
+      "question": "When is it acceptable to use a bare except clause?",
+      "expected_document": "pep-0008.txt",
+      "retrieval_s": 0.014295199885964394,
+      "retrieved": [
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 33,
+          "distance": 0.6001
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 53,
+          "distance": 0.608
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 52,
+          "distance": 0.6165
+        }
+      ],
+      "passage_rank": 2,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep257-01",
+      "question": "What kind of quotes should always be used around docstrings?",
+      "expected_document": "pep-0257.txt",
+      "retrieval_s": 0.014731200179085135,
+      "retrieved": [
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 2,
+          "distance": 0.362
+        },
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 0,
+          "distance": 0.3763
+        },
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 1,
+          "distance": 0.4121
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep257-02",
+      "question": "What quoting should a docstring use if it contains backslashes?",
+      "expected_document": "pep-0257.txt",
+      "retrieval_s": 0.014205000130459666,
+      "retrieved": [
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 2,
+          "distance": 0.4344
+        },
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 3,
+          "distance": 0.4927
+        },
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 12,
+          "distance": 0.4975
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep257-03",
+      "question": "Should a one-line docstring describe the function (\"Returns the pathname\") or phrase its effect as a command?",
+      "expected_document": "pep-0257.txt",
+      "retrieval_s": 0.016378599917516112,
+      "retrieved": [
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 4,
+          "distance": 0.3384
+        },
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 6,
+          "distance": 0.4501
+        },
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 12,
+          "distance": 0.4603
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep257-04",
+      "question": "What separates the summary line of a multi-line docstring from the more elaborate description?",
+      "expected_document": "pep-0257.txt",
+      "retrieval_s": 0.015752000035718083,
+      "retrieved": [
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 5,
+          "distance": 0.3446
+        },
+        {
+          "filename": "pep-0257.txt",
+          "chunk_index": 12,
+          "distance": 0.3711
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 30,
+          "distance": 0.5074
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep343-01",
+      "question": "In a with statement, what happens to an exception raised in the block if __exit__() returns a true value?",
+      "expected_document": "pep-0343.txt",
+      "retrieval_s": 0.015053499955683947,
+      "retrieved": [
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 5,
+          "distance": 0.2432
+        },
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 14,
+          "distance": 0.3093
+        },
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 13,
+          "distance": 0.3438
+        }
+      ],
+      "passage_rank": 2,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep343-02",
+      "question": "What arguments is __exit__() called with when the with block finishes without an exception?",
+      "expected_document": "pep-0343.txt",
+      "retrieval_s": 0.016501399921253324,
+      "retrieved": [
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 5,
+          "distance": 0.2554
+        },
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 14,
+          "distance": 0.2689
+        },
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 13,
+          "distance": 0.277
+        }
+      ],
+      "passage_rank": 2,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep343-03",
+      "question": "Which decorator turns a generator function into a context manager factory?",
+      "expected_document": "pep-0343.txt",
+      "retrieval_s": 0.015541099943220615,
+      "retrieved": [
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 26,
+          "distance": 0.3904
+        },
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 19,
+          "distance": 0.4009
+        },
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 21,
+          "distance": 0.4263
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep343-04",
+      "question": "Why does the with statement raise TypeError rather than AttributeError when __enter__ or __exit__ is missing?",
+      "expected_document": "pep-0343.txt",
+      "retrieval_s": 0.016521899960935116,
+      "retrieved": [
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 0,
+          "distance": 0.3735
+        },
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 13,
+          "distance": 0.413
+        },
+        {
+          "filename": "pep-0343.txt",
+          "chunk_index": 12,
+          "distance": 0.4226
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep484-01",
+      "question": "What is the shorthand for writing Union[T1, None] in a type hint?",
+      "expected_document": "pep-0484.txt",
+      "retrieval_s": 0.014795299852266908,
+      "retrieved": [
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 40,
+          "distance": 0.408
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 9,
+          "distance": 0.4117
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 10,
+          "distance": 0.4317
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep484-02",
+      "question": "How do you write a type hint that refers to a class that has not been defined yet?",
+      "expected_document": "pep-0484.txt",
+      "retrieval_s": 0.012386800022795796,
+      "retrieved": [
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 60,
+          "distance": 0.4676
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 99,
+          "distance": 0.5062
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 9,
+          "distance": 0.5231
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep484-03",
+      "question": "What file extension do type stub files use?",
+      "expected_document": "pep-0484.txt",
+      "retrieval_s": 0.015785900177434087,
+      "retrieved": [
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 69,
+          "distance": 0.337
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 70,
+          "distance": 0.4589
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 79,
+          "distance": 0.5146
+        }
+      ],
+      "passage_rank": 2,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep484-04",
+      "question": "What happens if a '# type: ignore' comment is placed on a line by itself at the top of a file?",
+      "expected_document": "pep-0484.txt",
+      "retrieval_s": 0.016957500018179417,
+      "retrieved": [
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 64,
+          "distance": 0.4074
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 63,
+          "distance": 0.4334
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 60,
+          "distance": 0.5502
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep484-05",
+      "question": "What naming convention is recommended for type variables declared with covariant=True?",
+      "expected_document": "pep-0484.txt",
+      "retrieval_s": 0.013665700098499656,
+      "retrieved": [
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 33,
+          "distance": 0.4108
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 32,
+          "distance": 0.4553
+        },
+        {
+          "filename": "pep-0008.txt",
+          "chunk_index": 37,
+          "distance": 0.4654
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep484-06",
+      "question": "How should a type checker treat a function that has no annotations at all?",
+      "expected_document": "pep-0484.txt",
+      "retrieval_s": 0.015919199911877513,
+      "retrieved": [
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 60,
+          "distance": 0.2191
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 5,
+          "distance": 0.308
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 1,
+          "distance": 0.3135
+        }
+      ],
+      "passage_rank": 2,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep484-07",
+      "question": "Which special type annotates a function that never returns normally, such as one that always raises?",
+      "expected_document": "pep-0484.txt",
+      "retrieval_s": 0.015832100063562393,
+      "retrieved": [
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 46,
+          "distance": 0.4269
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 44,
+          "distance": 0.4393
+        },
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 9,
+          "distance": 0.4501
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep492-01",
+      "question": "What happens if you use await outside of an async def function?",
+      "expected_document": "pep-0492.txt",
+      "retrieval_s": 0.016028400044888258,
+      "retrieved": [
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 48,
+          "distance": 0.3268
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 47,
+          "distance": 0.3525
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 9,
+          "distance": 0.3816
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep492-02",
+      "question": "What is raised when a native coroutine is garbage collected without ever being awaited?",
+      "expected_document": "pep-0492.txt",
+      "retrieval_s": 0.01665599993430078,
+      "retrieved": [
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 7,
+          "distance": 0.4365
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 35,
+          "distance": 0.4566
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 31,
+          "distance": 0.4615
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep492-03",
+      "question": "Which two magic methods does an asynchronous context manager need for async with?",
+      "expected_document": "pep-0492.txt",
+      "retrieval_s": 0.016654199920594692,
+      "retrieved": [
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 19,
+          "distance": 0.3395
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 36,
+          "distance": 0.4057
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 35,
+          "distance": 0.4332
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep492-04",
+      "question": "What exception must __anext__ raise to end asynchronous iteration?",
+      "expected_document": "pep-0492.txt",
+      "retrieval_s": 0.014897200046107173,
+      "retrieved": [
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 22,
+          "distance": 0.4209
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 26,
+          "distance": 0.424
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 21,
+          "distance": 0.4486
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep492-05",
+      "question": "What does the async/await proposal call objects that have an __await__ method?",
+      "expected_document": "pep-0492.txt",
+      "retrieval_s": 0.013828299939632416,
+      "retrieved": [
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 48,
+          "distance": 0.4044
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 9,
+          "distance": 0.4097
+        },
+        {
+          "filename": "pep-0492.txt",
+          "chunk_index": 35,
+          "distance": 0.4225
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep498-01",
+      "question": "Which type conversions can follow an expression inside an f-string?",
+      "expected_document": "pep-0498.txt",
+      "retrieval_s": 0.017030599992722273,
+      "retrieved": [
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 11,
+          "distance": 0.4126
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 23,
+          "distance": 0.4396
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 10,
+          "distance": 0.4865
+        }
+      ],
+      "passage_rank": 3,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep498-02",
+      "question": "How do you put a literal curly brace in the output of an f-string?",
+      "expected_document": "pep-0498.txt",
+      "retrieval_s": 0.01712399977259338,
+      "retrieved": [
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 17,
+          "distance": 0.4195
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 9,
+          "distance": 0.4336
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 11,
+          "distance": 0.4807
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep498-03",
+      "question": "Why can't a lambda appear unparenthesized inside an f-string expression?",
+      "expected_document": "pep-0498.txt",
+      "retrieval_s": 0.016655500046908855,
+      "retrieved": [
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 10,
+          "distance": 0.321
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 28,
+          "distance": 0.423
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 11,
+          "distance": 0.4465
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep498-04",
+      "question": "When are adjacent f-strings concatenated, compared with adjacent regular strings?",
+      "expected_document": "pep-0498.txt",
+      "retrieval_s": 0.016878800000995398,
+      "retrieved": [
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 23,
+          "distance": 0.513
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 8,
+          "distance": 0.5134
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 16,
+          "distance": 0.5268
+        }
+      ],
+      "passage_rank": 3,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep498-05",
+      "question": "Which protocol is used to format the value of each f-string expression?",
+      "expected_document": "pep-0498.txt",
+      "retrieval_s": 0.018065300071612,
+      "retrieved": [
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 11,
+          "distance": 0.3669
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 25,
+          "distance": 0.4221
+        },
+        {
+          "filename": "pep-0498.txt",
+          "chunk_index": 23,
+          "distance": 0.4243
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep572-01",
+      "question": "What informal nickname did the := operator get during discussion of assignment expressions?",
+      "expected_document": "pep-0572.txt",
+      "retrieval_s": 0.015631099930033088,
+      "retrieved": [
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 1,
+          "distance": 0.3842
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 0,
+          "distance": 0.3978
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 42,
+          "distance": 0.4082
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep572-02",
+      "question": "Where does an assignment expression inside a list comprehension bind its target?",
+      "expected_document": "pep-0572.txt",
+      "retrieval_s": 0.012649599928408861,
+      "retrieved": [
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 20,
+          "distance": 0.3602
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 13,
+          "distance": 0.3618
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 11,
+          "distance": 0.382
+        }
+      ],
+      "passage_rank": 3,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep572-03",
+      "question": "Is 'y := f(x)' valid as a standalone statement without parentheses?",
+      "expected_document": "pep-0572.txt",
+      "retrieval_s": 0.01582950004376471,
+      "retrieved": [
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 7,
+          "distance": 0.3502
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 32,
+          "distance": 0.4566
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 8,
+          "distance": 0.4683
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep572-04",
+      "question": "Do assignment expressions support augmented assignment like +=, and what is the equivalent?",
+      "expected_document": "pep-0572.txt",
+      "retrieval_s": 0.01884729997254908,
+      "retrieved": [
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 20,
+          "distance": 0.4104
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 42,
+          "distance": 0.4287
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 7,
+          "distance": 0.4877
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep3333-01",
+      "question": "How many positional arguments must a WSGI application object accept, and what are they usually called?",
+      "expected_document": "pep-3333.txt",
+      "retrieval_s": 0.0189451000187546,
+      "retrieved": [
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 24,
+          "distance": 0.3129
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 12,
+          "distance": 0.339
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 97,
+          "distance": 0.367
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep3333-02",
+      "question": "What are WSGI components called that act as a server to an application and as an application to a server?",
+      "expected_document": "pep-3333.txt",
+      "retrieval_s": 0.017963699996471405,
+      "retrieved": [
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 7,
+          "distance": 0.2093
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 6,
+          "distance": 0.2729
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 5,
+          "distance": 0.2762
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep3333-03",
+      "question": "Through which encoding must the content of WSGI native strings be translatable to bytes?",
+      "expected_document": "pep-3333.txt",
+      "retrieval_s": 0.016939799999818206,
+      "retrieved": [
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 10,
+          "distance": 0.2469
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 63,
+          "distance": 0.3351
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 54,
+          "distance": 0.3438
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep3333-04",
+      "question": "If the iterable returned by a WSGI application has a close() method, what must the server do?",
+      "expected_document": "pep-3333.txt",
+      "retrieval_s": 0.015694300178438425,
+      "retrieved": [
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 91,
+          "distance": 0.2591
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 84,
+          "distance": 0.2826
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 85,
+          "distance": 0.3158
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep3333-05",
+      "question": "Why was the WSGI spec reissued as a new PEP instead of keeping PEP 333?",
+      "expected_document": "pep-3333.txt",
+      "retrieval_s": 0.015193500090390444,
+      "retrieved": [
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 0,
+          "distance": 0.395
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 100,
+          "distance": 0.4166
+        },
+        {
+          "filename": "pep-3333.txt",
+          "chunk_index": 96,
+          "distance": 0.4681
+        }
+      ],
+      "passage_rank": 1,
+      "retrieval_hit": true,
+      "doc_hit": true
+    },
+    {
+      "id": "pep636-01",
+      "question": "Which pattern always matches but does not bind any variables?",
+      "expected_document": "pep-0636.txt",
+      "retrieval_s": 0.015487700002267957,
+      "retrieved": [
+        {
+          "filename": "pep-0636.txt",
+          "chunk_index": 9,
+          "distance": 0.394
+        },
+        {
+          "filename": "pep-0636.txt",
+          "chunk_index": 12,
+          "distance": 0.541
+        },
+        {
+          "filename": "pep-0636.txt",
+          "chunk_index": 3,
+          "distance": 0.5494
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep636-02",
+      "question": "What restriction applies to the variables bound by the alternatives of an or pattern?",
+      "expected_document": "pep-0636.txt",
+      "retrieval_s": 0.01727870013564825,
+      "retrieved": [
+        {
+          "filename": "pep-0484.txt",
+          "chunk_index": 31,
+          "distance": 0.4862
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 36,
+          "distance": 0.5657
+        },
+        {
+          "filename": "pep-0572.txt",
+          "chunk_index": 32,
+          "distance": 0.568
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": false
+    },
+    {
+      "id": "pep636-03",
+      "question": "In what order are the alternatives in an or pattern tried?",
+      "expected_document": "pep-0636.txt",
+      "retrieval_s": 0.015646199928596616,
+      "retrieved": [
+        {
+          "filename": "pep-0636.txt",
+          "chunk_index": 9,
+          "distance": 0.5685
+        },
+        {
+          "filename": "pep-0636.txt",
+          "chunk_index": 10,
+          "distance": 0.5692
+        },
+        {
+          "filename": "pep-0636.txt",
+          "chunk_index": 5,
+          "distance": 0.5829
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    },
+    {
+      "id": "pep636-04",
+      "question": "When is a guard on a case clause evaluated?",
+      "expected_document": "pep-0636.txt",
+      "retrieval_s": 0.06534189986996353,
+      "retrieved": [
+        {
+          "filename": "pep-0636.txt",
+          "chunk_index": 29,
+          "distance": 0.6796
+        },
+        {
+          "filename": "pep-0636.txt",
+          "chunk_index": 3,
+          "distance": 0.6848
+        },
+        {
+          "filename": "pep-0636.txt",
+          "chunk_index": 25,
+          "distance": 0.7022
+        }
+      ],
+      "passage_rank": null,
+      "retrieval_hit": false,
+      "doc_hit": true
+    }
+  ]
+}

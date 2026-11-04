@@ -1,0 +1,1 @@
+{"name": "sentence-500-rerank", "chunker": "sentence", "chunk_size": 500, "chunk_overlap": 100, "top_k": 3, "rerank": true, "rerank_candidates": 20}

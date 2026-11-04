@@ -1,0 +1,1 @@
+{"name": "fixed-500", "chunker": "fixed", "chunk_size": 500, "chunk_overlap": 100, "top_k": 3, "rerank": false}
