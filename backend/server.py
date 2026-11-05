@@ -4,6 +4,7 @@ import requests
 import os
 from dotenv import load_dotenv
 import json
+import itertools
 from werkzeug.utils import secure_filename
 import PyPDF2
 from docx import Document
@@ -48,6 +49,22 @@ print("Embedding model loaded!")
 
 # In-memory storage for documents
 documents_db = []
+
+
+def _first_free_doc_id():
+    """One past the highest doc_id already stored in Chroma.
+
+    The document list above is in memory and resets on restart, but Chroma
+    keeps its chunks, so ids must continue after anything already stored.
+    """
+    metadatas = collection.get(include=["metadatas"])["metadatas"] or []
+    return max((int(m["doc_id"]) for m in metadatas if m and "doc_id" in m), default=0) + 1
+
+
+# Document ids only ever go up, so an id is never reused after a delete
+# (issue #3). next() on itertools.count is atomic in CPython, so concurrent
+# uploads still get distinct ids.
+_doc_ids = itertools.count(_first_free_doc_id())
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -130,7 +147,7 @@ def upload_document():
             return jsonify({'error': 'Failed to extract text from document'}), 500
         
         # Chunk, embed and store in Chroma (see rag.Retriever)
-        doc_id = len(documents_db) + 1
+        doc_id = next(_doc_ids)
         chunks = retriever.add_document(doc_id, filename, text_content)
         
         if not chunks:
